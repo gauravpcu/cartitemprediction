@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+packaged.yaml
+
+# Distribution / packaging
+node_modules/
+jspm_packages/
+*.zip
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
