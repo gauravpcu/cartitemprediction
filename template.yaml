@@ -1,0 +1,395 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Enhanced Order Prediction POC with Product-Level Forecasting using Amazon Forecast and Bedrock
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: Environment name
+
+  BedrockModelId:
+    Type: String
+    Default: anthropic.claude-3-7-sonnet-20250219-v1:0
+    Description: Amazon Bedrock model ID to use
+
+  EnableProductLevelForecasting:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable product-level forecasting (recommended)
+
+Globals:
+  Function:
+    Timeout: 120  # Increased timeout for product-level processing
+    MemorySize: 1024  # Increased memory for larger datasets
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+        ENVIRONMENT: !Ref Environment
+        ENABLE_PRODUCT_FORECASTING: !Ref EnableProductLevelForecasting
+
+Resources:
+  # S3 Buckets
+  RawDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldRawData
+            Status: Enabled
+            ExpirationInDays: 90
+
+  ProcessedDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldProcessedData
+            Status: Enabled
+            ExpirationInDays: 180
+
+  ModelArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+  ResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+  # DynamoDB Tables
+  FeedbackTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub OrderPredictionFeedback-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # New: Product Lookup Table for enhanced product-level forecasting
+  ProductLookupTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub OrderPredictionProductLookup-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: product_id
+          AttributeType: S
+        - AttributeName: customer_facility
+          AttributeType: S
+      KeySchema:
+        - AttributeName: product_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CustomerFacilityIndex
+          KeySchema:
+            - AttributeName: customer_facility
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # New: Prediction Cache Table for improved performance
+  PredictionCacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub OrderPredictionCache-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: cache_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: cache_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # IAM Roles
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonForecastFullAccess
+      Policies:
+        - PolicyName: BedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:ListFoundationModels
+                Resource: '*'
+        - PolicyName: LambdaInvokeAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:DeleteParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OrderPrediction/*'
+
+  ForecastRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: forecast.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  # API Gateway
+  OrderPredictionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+        AllowOrigin: "'*'"
+
+  # Lambda Functions
+  EnhancedFeatureEngineeringFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/enhanced_feature_engineering/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300  # 5 minutes for processing large datasets
+      MemorySize: 1024  # Reduced to avoid layer size issues
+      Runtime: python3.9
+      Environment:
+        Variables:
+          PROCESSED_BUCKET: !Ref ProcessedDataBucket
+          PRODUCT_LOOKUP_TABLE: !Ref ProductLookupTable
+          ENABLE_PRODUCT_FORECASTING: !Ref EnableProductLevelForecasting
+
+  DataValidationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/data_validation/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          PROCESSED_BUCKET: !Ref ProcessedDataBucket
+
+  ForecastSetupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/forecast_setup/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 900  # 15 minutes for forecast setup
+      Runtime: python3.9
+      Environment:
+        Variables:
+          FORECAST_ROLE_ARN: !GetAtt ForecastRole.Arn
+          PROCESSED_BUCKET: !Ref ProcessedDataBucket
+          ENABLE_PRODUCT_FORECASTING: !Ref EnableProductLevelForecasting
+
+  EnhancedPredictionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/enhanced_predictions/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 180  # 3 minutes for complex predictions
+      MemorySize: 1024  # Reduced to avoid issues
+      Runtime: python3.9
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          FEEDBACK_TABLE: !Ref FeedbackTable
+          PRODUCT_LOOKUP_TABLE: !Ref ProductLookupTable
+          PREDICTION_CACHE_TABLE: !Ref PredictionCacheTable
+          PROCESSED_BUCKET: !Ref ProcessedDataBucket
+
+  PredictionAPIFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/prediction_api/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref OrderPredictionApi
+            Path: /predict
+            Method: get
+
+  # New: Product-Level Prediction API
+  ProductPredictionAPIFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/product_prediction_api/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref OrderPredictionApi
+            Path: /predict/products
+            Method: get
+
+  RecommendAPIFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/recommend_api/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref OrderPredictionApi
+            Path: /recommend
+            Method: get
+
+  FeedbackAPIFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/feedback_api/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          FEEDBACK_TABLE: !Ref FeedbackTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref OrderPredictionApi
+            Path: /feedback
+            Method: post
+
+  # CloudWatch Alarms for monitoring
+  FeatureEngineeringErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Feature Engineering Function Errors
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref EnhancedFeatureEngineeringFunction
+
+  PredictionErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Prediction Function Errors
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref EnhancedPredictionsFunction
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiEndpoint
+  
+  ProductPredictionEndpoint:
+    Description: Product-level prediction endpoint
+    Value: !Sub https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/products
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductPredictionEndpoint
+  
+  RawDataBucketName:
+    Description: S3 bucket for raw data
+    Value: !Ref RawDataBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-RawDataBucket
+  
+  ProcessedDataBucketName:
+    Description: S3 bucket for processed data
+    Value: !Ref ProcessedDataBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-ProcessedDataBucket
+
+  ProductLookupTableName:
+    Description: DynamoDB table for product lookup
+    Value: !Ref ProductLookupTable
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductLookupTable
+
+  PredictionCacheTableName:
+    Description: DynamoDB table for prediction caching
+    Value: !Ref PredictionCacheTable
+    Export:
+      Name: !Sub ${AWS::StackName}-PredictionCacheTable

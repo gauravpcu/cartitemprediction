@@ -1,0 +1,44 @@
+# SAM configuration file for Enhanced Order Prediction Solution
+
+version = 0.1
+
+[default]
+[default.global]
+[default.global.parameters]
+stack_name = "order-prediction-enhanced"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+    "Environment=dev",
+    "BedrockModelId=anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "EnableProductLevelForecasting=true"
+]
+
+[default.build]
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy]
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+fail_on_empty_changeset = false
+resolve_s3 = true
+
+[default.package]
+[default.package.parameters]
+s3_prefix = "order-prediction-enhanced"
+
+[default.sync]
+[default.sync.parameters]
+watch = true
+
+[default.local_start_api]
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[default.local_start_lambda]
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
