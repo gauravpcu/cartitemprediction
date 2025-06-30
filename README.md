@@ -248,10 +248,10 @@ Monitor the solution using CloudWatch logs:
 
 ```bash
 # View all logs
-sam logs --stack-name order-prediction-enhanced --region us-east-2
+sam logs --stack-name cart-prediction --region us-east-1
 
 # View specific function logs
-aws logs tail /aws/lambda/order-prediction-enhanced-EnhancedFeatureEngineeringFunction --follow
+aws logs tail /aws/lambda/cart-prediction-EnhancedFeatureEngineeringFunction --follow
 ```
 
 ### CloudWatch Alarms
@@ -280,7 +280,7 @@ The solution includes pre-configured alarms for:
 
 ## 💰 Cost Optimization
 
-### Estimated Monthly Costs (us-east-2)
+### Estimated Monthly Costs (us-east-1)
 
 | Service | Usage | Estimated Cost |
 |---------|-------|----------------|

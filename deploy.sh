@@ -6,8 +6,8 @@
 set -e
 
 # Configuration
-STACK_NAME="order-prediction-enhanced"
-REGION="us-east-2"
+STACK_NAME="cart-prediction"
+REGION="us-east-1"
 ENVIRONMENT="dev"
 BEDROCK_MODEL="anthropic.claude-3-7-sonnet-20250219-v1:0"
 ENABLE_PRODUCT_FORECASTING="true"
@@ -70,8 +70,8 @@ while [[ $# -gt 0 ]]; do
         --help)
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
-            echo "  --stack-name NAME              CloudFormation stack name (default: order-prediction-enhanced)"
-            echo "  --region REGION                AWS region (default: us-east-2)"
+            echo "  --stack-name NAME              CloudFormation stack name (default: cart-prediction)"
+            echo "  --region REGION                AWS region (default: us-east-1)"
             echo "  --environment ENV              Environment (dev/test/prod, default: dev)"
             echo "  --bedrock-model MODEL          Bedrock model ID (default: anthropic.claude-3-7-sonnet-20250219-v1:0)"
             echo "  --disable-product-forecasting  Disable product-level forecasting"

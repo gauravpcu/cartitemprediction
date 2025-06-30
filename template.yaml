@@ -270,6 +270,9 @@ Resources:
             RestApiId: !Ref OrderPredictionApi
             Path: /predict
             Method: get
+            RequestParameters:
+              method.request.querystring.customerId: true
+              method.request.querystring.facilityId: true
 
   # New: Product-Level Prediction API
   ProductPredictionAPIFunction:
@@ -289,6 +292,9 @@ Resources:
             RestApiId: !Ref OrderPredictionApi
             Path: /predict/products
             Method: get
+            RequestParameters:
+              method.request.querystring.customerId: true
+              method.request.querystring.facilityId: true
 
   RecommendAPIFunction:
     Type: AWS::Serverless::Function
@@ -307,6 +313,10 @@ Resources:
             RestApiId: !Ref OrderPredictionApi
             Path: /recommend
             Method: get
+            RequestParameters:
+              method.request.querystring.customerId: true
+              method.request.querystring.facilityId: true
+              method.request.querystring.type: false
 
   FeedbackAPIFunction:
     Type: AWS::Serverless::Function

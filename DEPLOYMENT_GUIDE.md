@@ -79,8 +79,8 @@ Expected contents:
 ```
 
 #### Available Configuration Options:
-- `--stack-name`: CloudFormation stack name (default: order-prediction-enhanced)
-- `--region`: AWS region (default: us-east-2)
+- `--stack-name`: CloudFormation stack name (default: cart-prediction)
+- `--region`: AWS region (default: us-east-1)
 - `--environment`: Environment tag (dev/test/prod, default: dev)
 - `--bedrock-model`: Bedrock model ID (default: anthropic.claude-3-7-sonnet-20250219-v1:0)
 - `--disable-product-forecasting`: Disable product-level features
@@ -104,8 +104,8 @@ After successful deployment, you'll see outputs like:
 📋 Important Information:
 
 API Endpoints:
-  Main API: https://abc123.execute-api.us-east-2.amazonaws.com/Prod/
-  Product Predictions: https://abc123.execute-api.us-east-2.amazonaws.com/Prod/predict/products
+  Main API: https://abc123.execute-api.us-east-1.amazonaws.com/Prod/
+  Product Predictions: https://abc123.execute-api.us-east-1.amazonaws.com/Prod/predict/products
 
 S3 Buckets:
   Raw Data: order-prediction-raw-data-123456789-dev
@@ -139,7 +139,7 @@ aws s3 cp sample-orders.csv s3://$RAW_BUCKET/
 
 ```bash
 # Check processing logs
-sam logs --stack-name order-prediction-enhanced --region us-east-2 --tail
+sam logs --stack-name cart-prediction --region us-east-1 --tail
 
 # Check S3 for processed data
 aws s3 ls s3://order-prediction-processed-data-123456789-dev/processed/
@@ -149,7 +149,7 @@ aws s3 ls s3://order-prediction-processed-data-123456789-dev/processed/
 
 ```bash
 # Replace with your actual API endpoint
-API_ENDPOINT="https://abc123.execute-api.us-east-2.amazonaws.com/Prod"
+API_ENDPOINT="https://abc123.execute-api.us-east-1.amazonaws.com/Prod"
 
 # Test basic prediction
 curl "$API_ENDPOINT/predict?customerId=CUST001&facilityId=FAC001"
@@ -180,7 +180,7 @@ To update configuration after deployment:
 ```bash
 # Update with new parameters
 sam deploy \
-  --stack-name order-prediction-enhanced \
+  --stack-name cart-prediction \
   --parameter-overrides \
     Environment=prod \
     BedrockModelId=anthropic.claude-3-sonnet \
@@ -203,8 +203,8 @@ pip install --upgrade aws-sam-cli
 ```bash
 # Check stack events for specific errors
 aws cloudformation describe-stack-events \
-  --stack-name order-prediction-enhanced \
-  --region us-east-2
+  --stack-name cart-prediction \
+  --region us-east-1
 ```
 
 #### 3. Permission Issues
@@ -217,10 +217,10 @@ aws iam get-user
 #### 4. Service Availability
 ```bash
 # Check if Bedrock is available in your region
-aws bedrock list-foundation-models --region us-east-2
+aws bedrock list-foundation-models --region us-east-1
 
 # Check if Forecast is available
-aws forecast list-datasets --region us-east-2
+aws forecast list-datasets --region us-east-1
 ```
 
 ### Data Processing Issues
@@ -328,11 +328,11 @@ aws forecast list-datasets --region us-east-2
 ```bash
 # Update Lambda function code
 sam build
-sam deploy --stack-name order-prediction-enhanced
+sam deploy --stack-name cart-prediction
 
 # Update specific function
 aws lambda update-function-code \
-  --function-name order-prediction-enhanced-EnhancedPredictionsFunction \
+  --function-name cart-prediction-EnhancedPredictionsFunction \
   --zip-file fileb://new-function.zip
 ```
 
@@ -360,14 +360,14 @@ aws lambda update-function-code \
 #### Complete Rollback
 ```bash
 # Delete the entire stack
-sam delete --stack-name order-prediction-enhanced --region us-east-2
+sam delete --stack-name cart-prediction --region us-east-1
 ```
 
 #### Partial Rollback
 ```bash
 # Rollback to previous version
 aws cloudformation cancel-update-stack \
-  --stack-name order-prediction-enhanced
+  --stack-name cart-prediction
 ```
 
 ## ✅ Deployment Checklist

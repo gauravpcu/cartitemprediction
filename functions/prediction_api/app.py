@@ -13,12 +13,15 @@ enhance_function_name = os.environ.get('ENHANCE_FUNCTION_NAME')
 def lambda_handler(event, context):
     """API handler for order predictions"""
     try:
+        logger.info(f"Received event: {json.dumps(event)}")
         logger.info("Processing prediction request")
         
         # Extract query parameters
         query_params = event.get('queryStringParameters', {}) or {}
+        logger.info(f"Query params: {json.dumps(query_params)}")
         customer_id = query_params.get('customerId')
         facility_id = query_params.get('facilityId')
+        logger.info(f"customerId: {customer_id}, facilityId: {facility_id}")
         
         if not customer_id or not facility_id:
             return {
