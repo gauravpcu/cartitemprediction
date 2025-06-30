@@ -13,14 +13,11 @@ enhance_function_name = os.environ.get('ENHANCE_FUNCTION_NAME')
 def lambda_handler(event, context):
     """API handler for product-level predictions"""
     try:
-        logger.info("Processing product-level prediction request")
-        
         # Extract query parameters
-        query_params = event.get('queryStringParameters', {}) or {}
+        query_params = event.get('queryStringParameters') or {}
         customer_id = query_params.get('customerId')
         facility_id = query_params.get('facilityId')
-        product_id = query_params.get('productId')  # Optional for specific product
-        
+
         if not customer_id or not facility_id:
             return {
                 'statusCode': 400,
@@ -29,20 +26,21 @@ def lambda_handler(event, context):
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({
-                    'error': 'Missing required parameters: customerId and facilityId'
+                    'message': 'Missing required parameters: customerId and facilityId'
                 })
             }
-        
+
         # Prepare payload for enhanced predictions function
         payload = {
             'action': 'predict',
-            'customer_id': customer_id,
-            'facility_id': facility_id,
+            'customerId': customer_id,
+            'facilityId': facility_id,
             'prediction_type': 'product_level'
         }
         
+        product_id = query_params.get('productId')  # Optional for specific product
         if product_id:
-            payload['product_id'] = product_id
+            payload['productId'] = product_id
         
         # Invoke enhanced predictions function
         response = lambda_client.invoke(
@@ -50,31 +48,24 @@ def lambda_handler(event, context):
             InvocationType='RequestResponse',
             Payload=json.dumps(payload)
         )
-        
+
         # Parse response
-        response_payload = json.loads(response['Payload'].read())
-        
-        if response['StatusCode'] == 200:
-            return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps(response_payload)
-            }
-        else:
-            return {
-                'statusCode': 500,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({
-                    'error': 'Internal server error'
-                })
-            }
-            
+        response_payload = json.loads(response['Payload'].read().decode('utf-8'))
+
+        # Ensure the body is a JSON string if it's a dict
+        response_body = response_payload.get('body', '{}')
+        if isinstance(response_body, dict):
+            response_body = json.dumps(response_body)
+
+        return {
+            'statusCode': response_payload.get('statusCode', 200),
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': response_body
+        }
+
     except Exception as e:
         logger.error(f"Error in product prediction API: {str(e)}")
         return {
@@ -84,6 +75,6 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
-                'error': str(e)
+                'message': str(e)
             })
         }

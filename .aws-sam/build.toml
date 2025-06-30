@@ -5,7 +5,7 @@ codeuri = "/Users/gaurav/Desktop/Work/cartitemprediction/functions/enhanced_feat
 runtime = "python3.9"
 architecture = "x86_64"
 handler = "app.lambda_handler"
-manifest_hash = "d287e760511924112510923e173cc43d"
+manifest_hash = "93db735afaa0bbb7db4dd7c404e870bb"
 packagetype = "Zip"
 functions = ["EnhancedFeatureEngineeringFunction"]
 

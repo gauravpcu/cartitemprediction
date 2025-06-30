@@ -201,6 +201,13 @@ Resources:
             Ref: ProductLookupTable
           ENABLE_PRODUCT_FORECASTING:
             Ref: EnableProductLevelForecasting
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: RawDataBucket
+            Events: s3:ObjectCreated:*
     Metadata:
       SamResourceId: EnhancedFeatureEngineeringFunction
   DataValidationFunction:
@@ -271,6 +278,7 @@ Resources:
   PredictionAPIFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Description: API function for handling order predictions.
       CodeUri: PredictionAPIFunction
       Handler: app.lambda_handler
       Role:

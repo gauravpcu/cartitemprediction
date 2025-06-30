@@ -43,7 +43,7 @@ def get_product_lookup_data():
         )
         
         if 'CommonPrefixes' not in response:
-            return {}, {}
+            return pd.DataFrame(), pd.DataFrame()
         
         # Get the latest timestamp folder
         latest_folder = sorted([prefix['Prefix'] for prefix in response['CommonPrefixes']])[-1]
@@ -76,8 +76,8 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
         
         # Get products for this customer-facility combination
         customer_products = customer_product_lookup_df[
-            (customer_product_lookup_df['CustomerID'] == int(customer_id)) & 
-            (customer_product_lookup_df['FacilityID'] == int(facility_id))
+            (customer_product_lookup_df['CustomerID'] == customer_id) & 
+            (customer_product_lookup_df['FacilityID'] == facility_id)
         ]
         
         product_predictions = []
@@ -125,8 +125,8 @@ def generate_mock_product_predictions(customer_id, facility_id, customer_product
     try:
         # Get products for this customer-facility combination
         customer_products = customer_product_lookup_df[
-            (customer_product_lookup_df['CustomerID'] == int(customer_id)) & 
-            (customer_product_lookup_df['FacilityID'] == int(facility_id))
+            (customer_product_lookup_df['CustomerID'] == customer_id) & 
+            (customer_product_lookup_df['FacilityID'] == facility_id)
         ]
         
         product_predictions = []
