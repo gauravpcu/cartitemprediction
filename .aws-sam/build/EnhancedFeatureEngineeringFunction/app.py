@@ -39,7 +39,7 @@ def create_lookup_files(df):
     # Product Lookup
     product_lookup = df[['ProductID', 'ProductDescription', 'ProductCategory']].drop_duplicates()
     product_lookup.rename(columns={'ProductDescription': 'ProductName', 'ProductCategory': 'CategoryName'}, inplace=True)
-    product_lookup['vendorName'] = 'Vendor' + (product_lookup['ProductID'].str.replace('PROD', '')).astype(str)
+    product_lookup['vendorName'] = 'Vendor' + product_lookup['ProductID'].astype(str).str.replace('PROD', '')
 
     # Customer-Product Lookup
     customer_product_lookup = df.groupby(['CustomerID', 'FacilityID', 'ProductID']).agg(
@@ -66,6 +66,19 @@ def lambda_handler(event, context):
         
         # Process data with pandas
         df = pd.read_csv(download_path)
+        # Normalize column names: strip spaces, make consistent case
+        df.columns = [col.strip().replace(' ', '').replace('_', '').title() for col in df.columns]
+        # Try to match expected columns
+        col_map = {
+            'Customerid': 'CustomerID',
+            'Facilityid': 'FacilityID',
+            'Productid': 'ProductID',
+            'Productdescription': 'ProductDescription',
+            'Productcategory': 'ProductCategory',
+            'Createdate': 'CreateDate',
+            'Quantity': 'Quantity'
+        }
+        df.rename(columns={k: v for k, v in col_map.items() if k in df.columns}, inplace=True)
         df['CreateDate'] = pd.to_datetime(df['CreateDate'], format='%m/%d/%y')
 
         product_lookup_df, customer_product_lookup_df = create_lookup_files(df)

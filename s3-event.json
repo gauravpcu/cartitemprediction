@@ -27,7 +27,7 @@
           "arn": "arn:aws:s3:::cart-prediction-rawdatabucket-6qnhmltcw42k"
         },
         "object": {
-          "key": "sample_data.csv",
+          "key": "validated.csv",
           "size": 213,
           "eTag": "0123456789abcdef0123456789abcdef",
           "versionId": "096f1a2fb429a575d279e34a7d88b343"

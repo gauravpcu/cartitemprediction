@@ -5,8 +5,8 @@ version = 0.1
 [default]
 [default.global]
 [default.global.parameters]
-stack_name = "order-prediction-enhanced"
-region = "us-east-2"
+stack_name = "cart-prediction"
+region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = [
@@ -29,7 +29,7 @@ resolve_s3 = true
 
 [default.package]
 [default.package.parameters]
-s3_prefix = "order-prediction-enhanced"
+s3_prefix = "cart-prediction"
 
 [default.sync]
 [default.sync.parameters]

@@ -73,19 +73,36 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
         if not forecast_arn:
             logger.warning("No forecast ARN available, using mock data")
             return generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df)
-        
+
+        # Log incoming types and values
+        logger.info(f"API customer_id: {customer_id} (type: {type(customer_id)})")
+        logger.info(f"API facility_id: {facility_id} (type: {type(facility_id)})")
+
+        # Normalize both DataFrame and input to string for robust matching
+        customer_product_lookup_df['CustomerID'] = customer_product_lookup_df['CustomerID'].astype(str).str.strip()
+        customer_product_lookup_df['FacilityID'] = customer_product_lookup_df['FacilityID'].astype(str).str.strip()
+        norm_customer_id = str(customer_id).strip()
+        norm_facility_id = str(facility_id).strip()
+
+        logger.info(f"Normalized API customer_id: {norm_customer_id}")
+        logger.info(f"Normalized API facility_id: {norm_facility_id}")
+        logger.info(f"Unique CustomerIDs in lookup: {customer_product_lookup_df['CustomerID'].unique()}")
+        logger.info(f"Unique FacilityIDs in lookup: {customer_product_lookup_df['FacilityID'].unique()}")
+
         # Get products for this customer-facility combination
         customer_products = customer_product_lookup_df[
-            (customer_product_lookup_df['CustomerID'] == customer_id) & 
-            (customer_product_lookup_df['FacilityID'] == facility_id)
+            (customer_product_lookup_df['CustomerID'] == norm_customer_id) &
+            (customer_product_lookup_df['FacilityID'] == norm_facility_id)
         ]
-        
+
+        logger.info(f"Found {len(customer_products)} products for customer {norm_customer_id} at facility {norm_facility_id}")
+
         product_predictions = []
-        
+
         for _, product_row in customer_products.iterrows():
             product_id = product_row['ProductID']
-            item_id = f"{customer_id}_{facility_id}_{product_id}"
-            
+            item_id = f"{norm_customer_id}_{norm_facility_id}_{product_id}"
+
             try:
                 response = forecast_client.query_forecast(
                     ForecastArn=forecast_arn,
@@ -93,10 +110,10 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
                         'item_id': item_id
                     }
                 )
-                
+
                 # Process the forecast response
                 predictions = response.get('Predictions', {})
-                
+
                 product_predictions.append({
                     'product_id': product_id,
                     'product_name': product_row['ProductName'],
@@ -109,13 +126,13 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
                         'last_order': product_row['LastOrderDate']
                     }
                 })
-                
+
             except Exception as product_error:
                 logger.warning(f"Error querying forecast for product {product_id}: {str(product_error)}")
                 continue
-        
+
         return product_predictions
-        
+
     except Exception as e:
         logger.error(f"Error querying product forecasts: {str(e)}")
         return generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df)
@@ -123,11 +140,28 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
 def generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df):
     """Generate mock product predictions for testing"""
     try:
+        # Log incoming types and values for debugging
+        logger.info(f"MOCK: API customer_id: {customer_id} (type: {type(customer_id)})")
+        logger.info(f"MOCK: API facility_id: {facility_id} (type: {type(facility_id)})")
+
+        # Normalize both DataFrame and input to string for robust matching
+        customer_product_lookup_df['CustomerID'] = customer_product_lookup_df['CustomerID'].astype(str).str.strip()
+        customer_product_lookup_df['FacilityID'] = customer_product_lookup_df['FacilityID'].astype(str).str.strip()
+        norm_customer_id = str(customer_id).strip()
+        norm_facility_id = str(facility_id).strip()
+
+        logger.info(f"MOCK: Normalized API customer_id: {norm_customer_id}")
+        logger.info(f"MOCK: Normalized API facility_id: {norm_facility_id}")
+        logger.info(f"MOCK: Unique CustomerIDs in lookup: {customer_product_lookup_df['CustomerID'].unique()}")
+        logger.info(f"MOCK: Unique FacilityIDs in lookup: {customer_product_lookup_df['FacilityID'].unique()}")
+
         # Get products for this customer-facility combination
         customer_products = customer_product_lookup_df[
-            (customer_product_lookup_df['CustomerID'] == customer_id) & 
-            (customer_product_lookup_df['FacilityID'] == facility_id)
+            (customer_product_lookup_df['CustomerID'] == norm_customer_id) & 
+            (customer_product_lookup_df['FacilityID'] == norm_facility_id)
         ]
+        
+        logger.info(f"MOCK: Found {len(customer_products)} products for customer {norm_customer_id} at facility {norm_facility_id}")
         
         product_predictions = []
         base_date = datetime.now()
