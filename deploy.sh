@@ -9,7 +9,8 @@ set -e
 STACK_NAME="cart-prediction"
 REGION="us-east-1"
 ENVIRONMENT="dev"
-BEDROCK_MODEL="anthropic.claude-3-7-sonnet-20250219-v1:0"
+BEDROCK_MODEL="anthropic.claude-3-sonnet-20240229-v1:0"
+SAGEMAKER_ENDPOINT_NAME="canvas-PRO-MT-07062025"
 ENABLE_PRODUCT_FORECASTING="true"
 
 # Colors for output
@@ -63,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             BEDROCK_MODEL="$2"
             shift 2
             ;;
+        --sagemaker-endpoint-name)
+            SAGEMAKER_ENDPOINT_NAME="$2"
+            shift 2
+            ;;
         --disable-product-forecasting)
             ENABLE_PRODUCT_FORECASTING="false"
             shift
@@ -73,7 +78,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --stack-name NAME              CloudFormation stack name (default: cart-prediction)"
             echo "  --region REGION                AWS region (default: us-east-1)"
             echo "  --environment ENV              Environment (dev/test/prod, default: dev)"
-            echo "  --bedrock-model MODEL          Bedrock model ID (default: anthropic.claude-3-7-sonnet-20250219-v1:0)"
+            echo "  --bedrock-model MODEL          Bedrock model ID (default: $BEDROCK_MODEL)"
+            echo "  --sagemaker-endpoint-name NAME SageMaker endpoint name (default: $SAGEMAKER_ENDPOINT_NAME)"
             echo "  --disable-product-forecasting  Disable product-level forecasting"
             echo "  --help                         Show this help message"
             exit 0
@@ -90,6 +96,7 @@ echo "  Stack Name: $STACK_NAME"
 echo "  Region: $REGION"
 echo "  Environment: $ENVIRONMENT"
 echo "  Bedrock Model: $BEDROCK_MODEL"
+echo "  SageMaker Endpoint: $SAGEMAKER_ENDPOINT_NAME"
 echo "  Product Forecasting: $ENABLE_PRODUCT_FORECASTING"
 echo ""
 
@@ -118,6 +125,7 @@ if ! aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGIO
         --parameter-overrides \
             Environment=$ENVIRONMENT \
             BedrockModelId=$BEDROCK_MODEL \
+            SageMakerEndpointName=$SAGEMAKER_ENDPOINT_NAME \
             EnableProductLevelForecasting=$ENABLE_PRODUCT_FORECASTING \
         --resolve-s3
 else
@@ -129,6 +137,7 @@ else
         --parameter-overrides \
             Environment=$ENVIRONMENT \
             BedrockModelId=$BEDROCK_MODEL \
+            SageMakerEndpointName=$SAGEMAKER_ENDPOINT_NAME \
             EnableProductLevelForecasting=$ENABLE_PRODUCT_FORECASTING \
         --resolve-s3
 fi
@@ -176,4 +185,4 @@ echo -e "${YELLOW}🔗 Useful Commands:${NC}"
 echo "  View logs: sam logs --stack-name $STACK_NAME --region $REGION"
 echo "  Delete stack: sam delete --stack-name $STACK_NAME --region $REGION"
 echo ""
-echo -e "${GREEN}✨ Happy forecasting!${NC}"
+echo -e "${GREEN}✨ Happy predicting!${NC}"

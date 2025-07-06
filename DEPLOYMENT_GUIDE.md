@@ -75,14 +75,14 @@ Expected contents:
   --stack-name my-order-prediction \
   --region us-east-1 \
   --environment prod \
-  --bedrock-model anthropic.claude-3-7-sonnet-20250219-v1:0
+  --bedrock-model anthropic.claude-3-sonnet-20240229-v1:0
 ```
 
 #### Available Configuration Options:
 - `--stack-name`: CloudFormation stack name (default: cart-prediction)
 - `--region`: AWS region (default: us-east-1)
 - `--environment`: Environment tag (dev/test/prod, default: dev)
-- `--bedrock-model`: Bedrock model ID (default: anthropic.claude-3-7-sonnet-20250219-v1:0)
+- `--bedrock-model`: Bedrock model ID (default: anthropic.claude-3-sonnet-20240229-v1:0)
 - `--disable-product-forecasting`: Disable product-level features
 
 ### Step 3: Monitor Deployment
@@ -170,7 +170,7 @@ The solution can be customized through CloudFormation parameters:
 | Parameter | Description | Default | Options |
 |-----------|-------------|---------|---------|
 | Environment | Deployment environment | dev | dev, test, prod |
-| BedrockModelId | Bedrock model for AI insights | anthropic.claude-3-7-sonnet-20250219-v1:0 | Any available Bedrock model |
+| BedrockModelId | Bedrock model for AI insights | anthropic.claude-3-sonnet-20240229-v1:0 | Any available Bedrock model |
 | EnableProductLevelForecasting | Enable product-level features | true | true, false |
 
 ### Updating Configuration
@@ -183,7 +183,7 @@ sam deploy \
   --stack-name cart-prediction \
   --parameter-overrides \
     Environment=prod \
-    BedrockModelId=anthropic.claude-3-sonnet \
+    BedrockModelId=anthropic.claude-3-sonnet-20240229-v1:0 \
   --confirm-changeset
 ```
 

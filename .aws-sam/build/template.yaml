@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Enhanced Order Prediction POC with Product-Level Forecasting using Amazon
-  Forecast and Bedrock
+  SageMaker Canvas and Bedrock
 Parameters:
   Environment:
     Type: String
@@ -13,8 +13,11 @@ Parameters:
     Description: Environment name
   BedrockModelId:
     Type: String
-    Default: anthropic.claude-3-7-sonnet-20250219-v1:0
+    Default: anthropic.claude-3-sonnet-20240229-v1:0
     Description: Amazon Bedrock model ID to use
+  SageMakerEndpointName:
+    Type: String
+    Description: The name of the SageMaker endpoint to use for predictions.
   EnableProductLevelForecasting:
     Type: String
     Default: 'true'
@@ -129,7 +132,6 @@ Resources:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - arn:aws:iam::aws:policy/AmazonS3FullAccess
       - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-      - arn:aws:iam::aws:policy/AmazonForecastFullAccess
       Policies:
       - PolicyName: BedrockAccess
         PolicyDocument:
@@ -140,6 +142,16 @@ Resources:
             - bedrock:InvokeModel
             - bedrock:ListFoundationModels
             Resource: '*'
+      - PolicyName: SageMakerInvokeEndpoint
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sagemaker:InvokeEndpoint
+            - sagemaker:InvokeEndpointAsync
+            Resource:
+              Fn::Sub: arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${SageMakerEndpointName}
       - PolicyName: LambdaInvokeAccess
         PolicyDocument:
           Version: '2012-10-17'
@@ -160,18 +172,6 @@ Resources:
             - ssm:DeleteParameter
             Resource:
               Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OrderPrediction/*
-  ForecastRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: forecast.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
   OrderPredictionApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -226,29 +226,6 @@ Resources:
             Ref: ProcessedDataBucket
     Metadata:
       SamResourceId: DataValidationFunction
-  ForecastSetupFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ForecastSetupFunction
-      Handler: app.lambda_handler
-      Role:
-        Fn::GetAtt:
-        - LambdaExecutionRole
-        - Arn
-      Timeout: 900
-      Runtime: python3.9
-      Environment:
-        Variables:
-          FORECAST_ROLE_ARN:
-            Fn::GetAtt:
-            - ForecastRole
-            - Arn
-          PROCESSED_BUCKET:
-            Ref: ProcessedDataBucket
-          ENABLE_PRODUCT_FORECASTING:
-            Ref: EnableProductLevelForecasting
-    Metadata:
-      SamResourceId: ForecastSetupFunction
   EnhancedPredictionsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -273,6 +250,8 @@ Resources:
             Ref: PredictionCacheTable
           PROCESSED_BUCKET:
             Ref: ProcessedDataBucket
+          SAGEMAKER_ENDPOINT_NAME:
+            Ref: SageMakerEndpointName
     Metadata:
       SamResourceId: EnhancedPredictionsFunction
   PredictionAPIFunction:

@@ -13,6 +13,8 @@ enhance_function_name = os.environ.get('ENHANCE_FUNCTION_NAME')
 def lambda_handler(event, context):
     """API handler for product-level predictions"""
     try:
+        logger.info("Processing product-level prediction request")
+        
         # Extract query parameters
         query_params = event.get('queryStringParameters') or {}
         customer_id = query_params.get('customerId')

@@ -1,0 +1,1 @@
+{"statusCode": 500, "body": "{\"error\": \"An error occurred (AccessDeniedException) when calling the CreateDatasetGroup operation: Amazon Forecast is no longer available to new customers. Existing customers of Amazon Forecast can continue to use the service as normal.\"}"}

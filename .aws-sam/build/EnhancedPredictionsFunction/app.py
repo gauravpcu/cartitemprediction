@@ -10,27 +10,17 @@ import pandas as pd
 logger = logging.getLogger()
 logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO'))
 
-forecast_client = boto3.client('forecast')
+# Use SageMaker client instead of Forecast
+sagemaker_runtime_client = boto3.client('sagemaker-runtime')
 bedrock_client = boto3.client('bedrock-runtime')
 s3_client = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 
 # Get environment variables
-bedrock_model_id = os.environ.get('BEDROCK_MODEL_ID', 'anthropic.claude-3-7-sonnet-20250219-v1:0')
+bedrock_model_id = os.environ.get('BEDROCK_MODEL_ID', 'anthropic.claude-3-sonnet-20240229-v1:0')
 feedback_table_name = os.environ.get('FEEDBACK_TABLE')
 processed_bucket = os.environ.get('PROCESSED_BUCKET')
-
-def get_forecast_arn():
-    """Get the latest forecast ARN from SSM Parameter Store"""
-    try:
-        ssm_client = boto3.client('ssm')
-        response = ssm_client.get_parameter(
-            Name='/OrderPrediction/ForecastArn'
-        )
-        return response['Parameter']['Value']
-    except Exception as e:
-        logger.error(f"Error getting forecast ARN: {str(e)}")
-        return os.environ.get('FORECAST_ARN')
+sagemaker_endpoint_name = os.environ.get('SAGEMAKER_ENDPOINT_NAME')
 
 def get_product_lookup_data():
     """Get product lookup data from S3"""
@@ -66,12 +56,11 @@ def get_product_lookup_data():
         logger.error(f"Error getting product lookup data: {str(e)}")
         return pd.DataFrame(), pd.DataFrame()
 
-def query_product_forecasts(customer_id, facility_id, product_lookup_df, customer_product_lookup_df):
-    """Query Amazon Forecast for product-level predictions"""
+def query_sagemaker_for_predictions(customer_id, facility_id, product_lookup_df, customer_product_lookup_df):
+    """Query SageMaker Canvas for product-level predictions"""
     try:
-        forecast_arn = get_forecast_arn()
-        if not forecast_arn:
-            logger.warning("No forecast ARN available, using mock data")
+        if not sagemaker_endpoint_name:
+            logger.warning("No SageMaker endpoint available, using mock data")
             return generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df)
 
         # Log incoming types and values
@@ -84,57 +73,70 @@ def query_product_forecasts(customer_id, facility_id, product_lookup_df, custome
         norm_customer_id = str(customer_id).strip()
         norm_facility_id = str(facility_id).strip()
 
-        logger.info(f"Normalized API customer_id: {norm_customer_id}")
-        logger.info(f"Normalized API facility_id: {norm_facility_id}")
-        logger.info(f"Unique CustomerIDs in lookup: {customer_product_lookup_df['CustomerID'].unique()}")
-        logger.info(f"Unique FacilityIDs in lookup: {customer_product_lookup_df['FacilityID'].unique()}")
-
         # Get products for this customer-facility combination
         customer_products = customer_product_lookup_df[
             (customer_product_lookup_df['CustomerID'] == norm_customer_id) &
             (customer_product_lookup_df['FacilityID'] == norm_facility_id)
         ]
-
         logger.info(f"Found {len(customer_products)} products for customer {norm_customer_id} at facility {norm_facility_id}")
 
+        if customer_products.empty:
+            logger.warning(f"No products found for customer {norm_customer_id} at facility {norm_facility_id} in lookup data.")
+            return []
+
+        # Prepare the input data for SageMaker
+        sagemaker_input_df = customer_products[['CustomerID', 'FacilityID', 'ProductID', 'ProductCategory', 'ProductDescription']].copy()
+        sagemaker_input_df['target_value'] = 0 # Add the required target column with a placeholder value
+        sagemaker_input_csv = sagemaker_input_df.to_csv(index=False)
+
+        logger.info(f"Invoking SageMaker endpoint: {sagemaker_endpoint_name}")
+        response = sagemaker_runtime_client.invoke_endpoint(
+            EndpointName=sagemaker_endpoint_name,
+            ContentType='text/csv',
+            Body=sagemaker_input_csv
+        )
+
+        # Process the SageMaker response
+        result_csv = response['Body'].read().decode('utf-8')
+        predictions_df = pd.read_csv(pd.io.common.StringIO(result_csv))
+        
+        # Merge predictions back with original data
+        merged_df = pd.merge(customer_products, predictions_df, on='ProductID', how='left')
+
         product_predictions = []
+        for _, pred_row in merged_df.iterrows():
+            product_id = pred_row['ProductID']
+            
+            # This part needs to be adapted based on the actual output format of your Canvas model
+            predicted_value = pred_row.get('prediction', 0) # IMPORTANT: Check this column name
 
-        for _, product_row in customer_products.iterrows():
-            product_id = product_row['ProductID']
-            item_id = f"{norm_customer_id}_{norm_facility_id}_{product_id}"
+            predictions = {}
+            for i in range(7):
+                date_str = (datetime.now() + timedelta(days=i)).strftime('%Y-%m-%d')
+                predictions[date_str] = {
+                    'p10': predicted_value * 0.5, # Mocking quantiles
+                    'p50': predicted_value,
+                    'p90': predicted_value * 1.5,
+                    'mean': predicted_value
+                }
 
-            try:
-                response = forecast_client.query_forecast(
-                    ForecastArn=forecast_arn,
-                    Filters={
-                        'item_id': item_id
-                    }
-                )
-
-                # Process the forecast response
-                predictions = response.get('Predictions', {})
-
-                product_predictions.append({
-                    'product_id': product_id,
-                    'product_name': product_row['ProductName'],
-                    'category_name': product_row['CategoryName'],
-                    'vendor_name': product_row['vendorName'],
-                    'predictions': predictions,
-                    'order_history': {
-                        'order_count': product_row['OrderCount'],
-                        'first_order': product_row['FirstOrderDate'],
-                        'last_order': product_row['LastOrderDate']
-                    }
-                })
-
-            except Exception as product_error:
-                logger.warning(f"Error querying forecast for product {product_id}: {str(product_error)}")
-                continue
+            product_predictions.append({
+                'product_id': product_id,
+                'product_name': pred_row['ProductName'],
+                'category_name': pred_row['CategoryName'],
+                'vendor_name': pred_row['vendorName'],
+                'predictions': predictions,
+                'order_history': {
+                    'order_count': pred_row['OrderCount'],
+                    'first_order': pred_row['FirstOrderDate'],
+                    'last_order': pred_row['LastOrderDate']
+                }
+            })
 
         return product_predictions
 
     except Exception as e:
-        logger.error(f"Error querying product forecasts: {str(e)}")
+        logger.error(f"Error querying SageMaker for predictions: {str(e)}")
         return generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df)
 
 def generate_mock_product_predictions(customer_id, facility_id, customer_product_lookup_df):
@@ -202,6 +204,7 @@ def generate_mock_product_predictions(customer_id, facility_id, customer_product
 def call_bedrock_for_product_recommendations(product_predictions, customer_id, facility_id):
     """Call Amazon Bedrock to generate product recommendations and insights"""
     try:
+        logger.info(f"Calling Bedrock for customer {customer_id}, facility {facility_id}")
         current_date = datetime.now().strftime("%Y-%m-%d")
         
         # Prepare product data for the prompt
@@ -214,6 +217,8 @@ def call_bedrock_for_product_recommendations(product_predictions, customer_id, f
                 'historical_orders': pred['order_history']['order_count'],
                 'predicted_quantities': pred['predictions']
             })
+        
+        logger.info(f"Prepared {len(product_summary)} products for Bedrock prompt")
         
         prompt = f"""
         Based on the following product-level demand forecasts for Customer {customer_id} at Facility {facility_id}:
@@ -255,12 +260,24 @@ def call_bedrock_for_product_recommendations(product_predictions, customer_id, f
         }}
         """
         
+        logger.info("Sending prompt to Bedrock...")
         # Call Bedrock
         if bedrock_model_id.startswith('anthropic.'):
             body = json.dumps({
-                "prompt": f"\n\nHuman: {prompt}\n\nAssistant:",
-                "max_tokens_to_sample": 2000,
-                "temperature": 0.2
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 2000,
+                "temperature": 0.2,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
             })
         else:
             body = json.dumps({
@@ -279,12 +296,15 @@ def call_bedrock_for_product_recommendations(product_predictions, customer_id, f
         )
         
         response_body = json.loads(response['body'].read())
+        logger.info("Received response from Bedrock")
         
         # Extract the response based on model type
         if bedrock_model_id.startswith('anthropic.'):
-            response_text = response_body.get('completion', '')
+            response_text = response_body.get('content', [{}])[0].get('text', '')
         else:
             response_text = response_body.get('results', [{}])[0].get('outputText', '')
+        
+        logger.info(f"Raw Bedrock response: {response_text}")
         
         # Extract JSON from the response
         try:
@@ -293,6 +313,7 @@ def call_bedrock_for_product_recommendations(product_predictions, customer_id, f
             if json_start >= 0 and json_end > json_start:
                 json_str = response_text[json_start:json_end]
                 recommendations = json.loads(json_str)
+                logger.info("Successfully parsed JSON from Bedrock response")
             else:
                 raise ValueError("No JSON found in response")
         except Exception as json_error:
@@ -382,23 +403,28 @@ def lambda_handler(event, context):
                 })
             }
         
-        # Query product-level forecasts
-        product_predictions = query_product_forecasts(
+        # Query product-level forecasts from SageMaker
+        product_predictions = query_sagemaker_for_predictions(
             customer_id, facility_id, product_lookup_df, customer_product_lookup_df
         )
         
         if not product_predictions:
+            logger.warning(f"No products found for customer {customer_id} at facility {facility_id}")
             return {
-                'statusCode': 404,
-                'body': json.dumps({
-                    'message': f'No products found for customer {customer_id} at facility {facility_id}'
-                })
+            'statusCode': 404,
+            'body': json.dumps({
+                'message': f'No products found for customer {customer_id} at facility {facility_id}'
+            })
             }
         
+        logger.info(f"Found {len(product_predictions)} products to analyze for customer {customer_id} at facility {facility_id}")
+        
         # Get enhanced recommendations from Bedrock
+        logger.info(f"Calling Bedrock for recommendations with {len(product_predictions)} products")
         recommendations = call_bedrock_for_product_recommendations(
             product_predictions, customer_id, facility_id
         )
+        logger.info(f"Received recommendations with {len(recommendations.get('recommended_products', []))} recommended products")
         
         # Prepare the response
         result = {

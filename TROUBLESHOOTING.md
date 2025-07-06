@@ -103,7 +103,7 @@ When prompted, use these values:
 - **Stack Name**: `cart-prediction`
 - **AWS Region**: `us-east-1` (or your preferred region)
 - **Parameter Environment**: `dev`
-- **Parameter BedrockModelId**: `anthropic.claude-3-7-sonnet-20250219-v1:0`
+- **Parameter BedrockModelId**: `anthropic.claude-3-sonnet-20240229-v1:0`
 - **Parameter EnableProductLevelForecasting**: `true`
 - **Confirm changes before deploy**: `Y`
 - **Allow SAM CLI to create IAM roles**: `Y`

@@ -4,6 +4,20 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 
 ## 🚀 Features
 
+### Check list
+
+-- Define Ai Objectives
+-- Measurable
+-- Preliminary Schedule
+-- Research The Ai Market
+-- Identify Data Sources
+-- Ai Feasibility Analysis
+-- Ai Legal And Ethical Considerations
+-- Attain Stakeholder Buy-In
+-- Define Onboarding Process
+-- Access To Domain
+
+
 ### Core Capabilities
 - **Automated Data Processing**: Intelligent feature engineering with temporal and product-level features
 - **Product-Level Forecasting**: Individual product demand prediction for better inventory management
@@ -24,8 +38,8 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Raw Data      │    │   Enhanced       │    │   Amazon        │
-│   (S3 Bucket)   │───▶│   Feature Eng.   │───▶│   Forecast      │
+│   Raw Data      │    │   Enhanced       │    │   Sagemaker     │
+│   (S3 Bucket)   │───▶│   Feature Eng.   │───▶│   Canvas        │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                                 │                        │
                                 ▼                        ▼
@@ -75,7 +89,7 @@ cd procurement_partners_deployment_package
 ./deploy.sh --stack-name my-order-prediction \
            --region us-east-1 \
            --environment prod \
-           --bedrock-model anthropic.claude-3-7-sonnet-20250219-v1:0
+           --bedrock-model anthropic.claude-3-sonnet-20240229-v1:0
 ```
 
 ### 2. Upload Sample Data
@@ -132,7 +146,7 @@ The solution supports the following configuration options:
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `Environment` | `dev` | Deployment environment (dev/test/prod) |
-| `BedrockModelId` | `anthropic.claude-3-7-sonnet-20250219-v1:0` | Bedrock model for AI insights |
+| `BedrockModelId` | `anthropic.claude-3-sonnet-20240229-v1:0` | Bedrock model for AI insights |
 | `EnableProductLevelForecasting` | `true` | Enable product-level predictions |
 
 ### Customization

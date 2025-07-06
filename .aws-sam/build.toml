@@ -18,15 +18,6 @@ manifest_hash = "039a9d3f8aa68ab4b6117f2b1a387e3a"
 packagetype = "Zip"
 functions = ["DataValidationFunction"]
 
-[function_build_definitions.b7105a2f-b144-43ee-b6bb-adc61eeafedc]
-codeuri = "/Users/gaurav/Desktop/Work/cartitemprediction/functions/forecast_setup"
-runtime = "python3.9"
-architecture = "x86_64"
-handler = "app.lambda_handler"
-manifest_hash = "d287e760511924112510923e173cc43d"
-packagetype = "Zip"
-functions = ["ForecastSetupFunction"]
-
 [function_build_definitions.ff67aa8c-d8fd-4df6-bb02-2a76e8780cdb]
 codeuri = "/Users/gaurav/Desktop/Work/cartitemprediction/functions/enhanced_predictions"
 runtime = "python3.9"

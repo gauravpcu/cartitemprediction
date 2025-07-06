@@ -1,4 +1,14 @@
 {
-  "customerId": "1045",
-  "facilityId": "3934"
+  "Records": [
+    {
+      "s3": {
+        "bucket": {
+          "name": "cart-prediction-rawdatabucket-6qnhmltcw42k"
+        },
+        "object": {
+          "key": "validated.csv"
+        }
+      }
+    }
+  ]
 }
