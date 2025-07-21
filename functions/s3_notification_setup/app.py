@@ -1,7 +1,13 @@
 import json
-import boto3
 import logging
-import urllib3
+
+# Import layer dependencies with error handling
+try:
+    import boto3
+    import urllib3
+except ImportError as e:
+    logging.error(f"Failed to import boto3/urllib3 from AWSUtilitiesLayer: {e}")
+    raise
 
 # Configure logging
 logger = logging.getLogger()

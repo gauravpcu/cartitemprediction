@@ -1,0 +1,117 @@
+============================================================
+LAMBDA SIZE VALIDATION REPORT
+============================================================
+Timestamp: 2025-07-18T16:25:15.553928
+
+Deployment Status: ✓ READY
+Total Items: 12 (Passed: 12, Failed: 0)
+
+Layers: 3 items, 112.95MB total
+  Passed: 3/3
+
+Functions: 9 items, 0.22MB total
+  Passed: 9/9
+
+DETAILED RESULTS:
+----------------------------------------
+✓ ml-libraries (layer)
+    Size: 31.97MB / 262MB
+    Compressed: 10.3MB
+    Files: 402
+    Largest files:
+      3.055MB - sklearn/_loss/_loss.cpython-313-x86_64-linux-gnu.so
+      0.834MB - sklearn/utils/sparsefuncs_fast.cpython-313-x86_64-linux-gnu.so
+      0.759MB - sklearn/neighbors/_ball_tree.cpython-313-x86_64-linux-gnu.so
+      0.757MB - sklearn/neighbors/_kd_tree.cpython-313-x86_64-linux-gnu.so
+      0.704MB - sklearn/metrics/_dist_metrics.cpython-313-x86_64-linux-gnu.so
+
+✓ core-data-science (layer)
+    Size: 75.57MB / 262MB
+    Compressed: 23.32MB
+    Files: 1956
+    Largest files:
+      21.381MB - numpy.libs/libscipy_openblas64_-ff651d7f.so
+      10.0MB - numpy/_core/_multiarray_umath.cpython-313-x86_64-linux-gnu.so
+      2.901MB - numpy/_core/_simd.cpython-313-x86_64-linux-gnu.so
+      2.702MB - numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0
+      2.582MB - pandas/_libs/groupby.cpython-313-x86_64-linux-gnu.so
+
+✓ aws-utilities (layer)
+    Size: 5.41MB / 262MB
+    Compressed: 1.68MB
+    Files: 237
+    Largest files:
+      1.183MB - botocore/data/endpoints.json
+      0.254MB - botocore/cacert.pem
+      0.16MB - botocore/data/s3/2006-03-01/service-2.json.gz
+      0.149MB - dateutil/zoneinfo/dateutil-zoneinfo.tar.gz
+      0.13MB - botocore/utils.py
+
+✓ recommend_api (function)
+    Size: 0.01MB / 50MB
+    Files: 2
+    Largest files:
+      0.009MB - app.py
+      0.0MB - requirements.txt
+
+✓ s3_notification_setup (function)
+    Size: 0.0MB / 50MB
+    Files: 2
+    Largest files:
+      0.005MB - app.py
+      0.0MB - requirements.txt
+
+✓ forecast_setup (function)
+    Size: 0.0MB / 50MB
+    Files: 1
+    Largest files:
+      0.0MB - app.py
+
+✓ prediction_api (function)
+    Size: 0.01MB / 50MB
+    Files: 2
+    Largest files:
+      0.008MB - app.py
+      0.0MB - requirements.txt
+
+✓ enhanced_feature_engineering (function)
+    Size: 0.07MB / 50MB
+    Compressed: 0.02MB
+    Files: 4
+    Largest files:
+      0.029MB - __pycache__/app.cpython-313.pyc
+      0.029MB - app.py
+      0.01MB - __pycache__/app.cpython-310.pyc
+      0.0MB - requirements.txt
+
+✓ enhanced_predictions (function)
+    Size: 0.06MB / 50MB
+    Compressed: 0.02MB
+    Files: 3
+    Largest files:
+      0.028MB - app.py
+      0.027MB - __pycache__/app.cpython-313.pyc
+      0.0MB - requirements.txt
+
+✓ data_validation (function)
+    Size: 0.05MB / 50MB
+    Compressed: 0.02MB
+    Files: 3
+    Largest files:
+      0.023MB - __pycache__/app.cpython-313.pyc
+      0.022MB - app.py
+      0.0MB - requirements.txt
+
+✓ feedback_api (function)
+    Size: 0.01MB / 50MB
+    Files: 2
+    Largest files:
+      0.008MB - app.py
+      0.0MB - requirements.txt
+
+✓ product_prediction_api (function)
+    Size: 0.01MB / 50MB
+    Files: 2
+    Largest files:
+      0.007MB - app.py
+      0.0MB - requirements.txt

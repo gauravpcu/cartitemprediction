@@ -22,10 +22,14 @@ parallel = true
 
 [default.deploy]
 [default.deploy.parameters]
-capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
 fail_on_empty_changeset = false
 resolve_s3 = true
+stack_name = "enhanced-order-prediction"
+s3_prefix = "enhanced-order-prediction"
+region = "us-east-2"
+disable_rollback = true
+parameter_overrides = "Environment=\"dev\" BedrockModelId=\"anthropic.claude-3-7-sonnet-20250219-v1:0\" SageMakerEndpointName=\"hybrent-deepar-2025-07-10-22-47-45-421\" EnableProductLevelForecasting=\"true\""
+image_repositories = []
 
 [default.package]
 [default.package.parameters]

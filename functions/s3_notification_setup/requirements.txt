@@ -1,2 +1,4 @@
-boto3>=1.26.0
-urllib3>=1.26.0
+# Heavy dependencies now provided by Lambda layers:
+# - boto3, urllib3: provided by AWSUtilitiesLayer
+
+# Function-specific dependencies only

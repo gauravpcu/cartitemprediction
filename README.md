@@ -34,6 +34,88 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 - **Multi-level Forecasting**: Both aggregate and product-level predictions
 - **Recommendation Engine**: AI-powered product recommendations for reordering and new products
 
+## 🏗️ Architecture & Function Flow
+
+### Lambda Function Workflow
+
+```mermaid
+graph TD
+    A[Raw CSV Upload to S3] --> B[EnhancedFeatureEngineeringFunction]
+    B --> C[Processed Data in S3]
+    C --> D[DataValidationFunction - Manual]
+    
+    E[API Request] --> F{API Endpoint}
+    F -->|/predict| G[PredictionAPIFunction]
+    F -->|/predict/products| H[ProductPredictionAPIFunction] 
+    F -->|/recommend| I[RecommendAPIFunction]
+    F -->|/feedback| J[FeedbackAPIFunction]
+    
+    G --> K[EnhancedPredictionsFunction]
+    H --> K
+    I --> K
+    
+    K --> L[SageMaker DeepAR Endpoint]
+    K --> M[Amazon Bedrock]
+    K --> N[DynamoDB Lookups]
+    
+    L --> O[Predictions Response]
+    M --> O
+    N --> O
+```
+
+### Function Responsibilities
+
+#### 🔄 **Data Processing Functions**
+1. **EnhancedFeatureEngineeringFunction** (Triggered by S3)
+   - Processes raw CSV files uploaded to S3
+   - Creates temporal features (day of week, seasonality, trends)
+   - Generates product demand patterns and statistics
+   - Creates lookup tables for products and customer-product relationships
+   - Formats data for SageMaker DeepAR training
+   - Saves processed data, lookups, and forecast-ready data to S3
+   - Updates DynamoDB with product catalog information
+
+2. **DataValidationFunction** (Manual invoke only)
+   - Validates processed data quality and completeness
+   - Generates comprehensive data profiling reports
+   - Performs business rule validation
+   - Creates data distribution analysis
+   - Currently not auto-triggered (requires manual invocation)
+
+#### 🤖 **ML & Prediction Functions**
+3. **EnhancedPredictionsFunction** (Called by API functions)
+   - Core prediction engine using pre-trained SageMaker DeepAR model
+   - Integrates with Amazon Bedrock for AI-powered insights
+   - Queries DynamoDB for product and customer data
+   - Generates both aggregate and product-level forecasts
+   - Implements caching for performance optimization
+   - Returns structured prediction data to API functions
+
+#### 🌐 **API Functions** (Triggered by API Gateway)
+4. **PredictionAPIFunction** (`GET /predict`)
+   - Handles basic prediction requests
+   - Validates customer and facility parameters
+   - Calls EnhancedPredictionsFunction for ML predictions
+   - Returns aggregate order predictions with confidence intervals
+
+5. **ProductPredictionAPIFunction** (`GET /predict/products`)
+   - Handles product-level prediction requests
+   - Supports filtering by specific products or categories
+   - Returns detailed product-by-product forecasts
+   - Includes product metadata and demand patterns
+
+6. **RecommendAPIFunction** (`GET /recommend`)
+   - Provides AI-powered product recommendations
+   - Supports different recommendation types (reorder, new products, seasonal)
+   - Uses Bedrock for intelligent recommendation reasoning
+   - Returns prioritized product suggestions with explanations
+
+7. **FeedbackAPIFunction** (`POST /feedback`)
+   - Collects user feedback on prediction accuracy
+   - Stores feedback in DynamoDB for model improvement
+   - Supports various feedback types (accuracy, usefulness, etc.)
+   - Enables continuous learning and model refinement
+
 ## 🏗️ Architecture
 
 ```
@@ -55,6 +137,26 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
+## 🔧 Lambda Functions in This Stack
+
+### Current Deployed Functions (Stack: enhanced-order-prediction)
+
+| # | Logical Name | Physical Function Name | Purpose | Trigger |
+|---|--------------|------------------------|---------|---------|
+| 1 | **EnhancedFeatureEngineeringFunction** | `enhanced-order-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W` | Main data processing, feature engineering, creates lookups | S3 raw data upload |
+| 2 | **DataValidationFunction** | `enhanced-order-prediction-DataValidationFunction-ydgv0ZZYdYsi` | Data quality validation and checks | Manual invoke only |
+| 3 | **EnhancedPredictionsFunction** | `enhanced-order-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2` | ML predictions using SageMaker and Bedrock | Called by API functions |
+| 4 | **PredictionAPIFunction** | `enhanced-order-prediction-PredictionAPIFunction-a10hQXzs0KCe` | REST API for basic predictions | API Gateway `/predict` |
+| 5 | **ProductPredictionAPIFunction** | `enhanced-order-prediction-ProductPredictionAPIFunc-O1nr9guw7tQp` | REST API for product-level predictions | API Gateway `/predict/products` |
+| 6 | **RecommendAPIFunction** | `enhanced-order-prediction-RecommendAPIFunction-gPsT373hi2KQ` | REST API for AI recommendations | API Gateway `/recommend` |
+| 7 | **FeedbackAPIFunction** | `enhanced-order-prediction-FeedbackAPIFunction-fQMYWHwfPHhs` | REST API for feedback collection | API Gateway `/feedback` |
+
+### ⚠️ Naming Inconsistency Notice
+**Important**: There are naming inconsistencies in the codebase:
+- **CloudFormation Stack**: `enhanced-order-prediction` (actual deployed name)
+- **Some scripts reference**: `cart-prediction` (outdated references)
+- **Bucket names contain**: `cart-prediction` (from previous deployments)
+
 ## 📋 Prerequisites
 
 - AWS CLI installed and configured
@@ -66,7 +168,7 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 ### Required AWS Permissions
 - Amazon S3 (full access)
 - Amazon DynamoDB (full access)
-- Amazon Forecast (full access)
+- Amazon SageMaker (invoke endpoint permissions)
 - Amazon Bedrock (invoke model permissions)
 - AWS Lambda (full access)
 - Amazon API Gateway (full access)
@@ -78,18 +180,17 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 ### 1. Clone and Deploy
 
 ```bash
-# Extract the deployment package
-unzip procurement_partners_deployment_package.zip
-cd procurement_partners_deployment_package
-
-# Deploy with default settings
+# Deploy with default settings (creates enhanced-order-prediction stack)
 ./deploy.sh
 
 # Or deploy with custom settings
-./deploy.sh --stack-name my-order-prediction \
+./deploy.sh --stack-name enhanced-order-prediction \
            --region us-east-1 \
            --environment prod \
            --bedrock-model anthropic.claude-3-sonnet-20240229-v1:0
+
+# Note: Current deployment uses stack name "enhanced-order-prediction"
+# Some legacy scripts may reference "cart-prediction" - update as needed
 ```
 
 ### 2. Upload Sample Data
@@ -102,15 +203,33 @@ aws s3 cp your-order-data.csv s3://order-prediction-raw-data-{ACCOUNT-ID}-{ENV}/
 ### 3. Test the APIs
 
 ```bash
-# Get aggregate predictions
-curl "https://{API-ID}.execute-api.{REGION}.amazonaws.com/Prod/predict?customerId=CUST001&facilityId=FAC001"
+# Current API Gateway Endpoint (from deployment)
+API_ENDPOINT="https://g08inrsas0.execute-api.us-east-1.amazonaws.com/Prod"
 
-# Get product-level predictions
-curl "https://{API-ID}.execute-api.{REGION}.amazonaws.com/Prod/predict/products?customerId=CUST001&facilityId=FAC001"
+# Get aggregate predictions
+curl "$API_ENDPOINT/predict?customerId=CUST001&facilityId=FAC001"
+
+# Get product-level predictions  
+curl "$API_ENDPOINT/predict/products?customerId=CUST001&facilityId=FAC001"
 
 # Get recommendations
-curl "https://{API-ID}.execute-api.{REGION}.amazonaws.com/Prod/recommend?customerId=CUST001&facilityId=FAC001&type=reorder"
+curl "$API_ENDPOINT/recommend?customerId=CUST001&facilityId=FAC001&type=reorder"
+
+# Submit feedback
+curl -X POST "$API_ENDPOINT/feedback" \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id":"CUST001","facility_id":"FAC001","rating":4}'
 ```
+
+### Current Deployed Resources
+
+| Resource Type | Name | Purpose |
+|---------------|------|---------|
+| **API Gateway** | `https://g08inrsas0.execute-api.us-east-1.amazonaws.com/Prod/` | Main API endpoint |
+| **S3 Raw Data** | `enhanced-order-prediction-rawdatabucket-sankmq5hrvsu` | Upload CSV files here |
+| **S3 Processed** | `enhanced-order-prediction-processeddatabucket-3sdqfh2qnotf` | Processed data output |
+| **DynamoDB Product Lookup** | `OrderPredictionProductLookup-dev` | Product catalog |
+| **DynamoDB Cache** | `OrderPredictionCache-dev` | Prediction caching |
 
 ## 📊 Data Format
 
@@ -254,6 +373,70 @@ Submit feedback on predictions.
 }
 ```
 
+## 🎯 Model Training & Deployment
+
+### Important: No Model Training in Lambda Functions
+
+**The Lambda functions do NOT train machine learning models.** Here's how the ML pipeline actually works:
+
+#### Current ML Architecture:
+```
+Jupyter Notebook → SageMaker Training Job → Deployed Model Endpoint
+     (Training)         (Model Creation)        (Inference Only)
+                                                      ↑
+                                            Lambda Functions Call This
+```
+
+#### What Each Component Does:
+- **Jupyter Notebook** (`hybrent.ipynb`): Contains the actual model training code
+- **SageMaker Training Job**: Creates and trains the DeepAR model
+- **Model Endpoint**: `hybrent-deepar-2025-07-20-23-56-22-287` (pre-trained, deployed)
+- **Lambda Functions**: Call the pre-trained endpoint for predictions
+
+#### Lambda Functions Role:
+- ✅ **Data Processing**: Prepare data for training format
+- ✅ **Feature Engineering**: Create features matching notebook approach  
+- ✅ **Inference**: Call pre-trained SageMaker endpoint
+- ✅ **API Services**: Serve predictions via REST APIs
+- ❌ **Model Training**: Not performed in Lambda (done in notebook)
+
+#### For Production Model Training:
+To implement automated model retraining, you would need to add:
+1. **Training Lambda Function**: Triggers SageMaker training jobs
+2. **Model Deployment Lambda**: Updates endpoints with new models
+3. **Scheduled Retraining**: CloudWatch Events for periodic training
+4. **Model Versioning**: Track and manage model versions
+
+## ⚠️ Known Issues & Fixes
+
+### Naming Inconsistency Resolution
+
+The codebase has mixed references between `cart-prediction` and `enhanced-order-prediction`. Here's how to fix:
+
+#### Current State:
+- **Actual Stack Name**: `enhanced-order-prediction`
+- **Actual Function Names**: `enhanced-order-prediction-*`
+- **Legacy References**: Many scripts still reference `cart-prediction`
+
+#### Files That Need Updates:
+1. **upload_new_file.sh** - Update bucket names and function references
+2. **deploy.sh** - Default stack name should be `enhanced-order-prediction`
+3. **Various test scripts** - Update stack and function name references
+4. **Documentation** - Update all command examples
+
+#### Quick Fix Commands:
+```bash
+# Update bucket names in upload script
+sed -i 's/cart-prediction/enhanced-order-prediction/g' upload_new_file.sh
+
+# Update deploy script default
+sed -i 's/STACK_NAME="cart-prediction"/STACK_NAME="enhanced-order-prediction"/g' deploy.sh
+
+# Update test scripts
+find . -name "*.sh" -exec sed -i 's/cart-prediction/enhanced-order-prediction/g' {} \;
+find . -name "*.py" -exec sed -i 's/cart-prediction/enhanced-order-prediction/g' {} \;
+```
+
 ## 🔍 Monitoring and Troubleshooting
 
 ### CloudWatch Logs
@@ -261,11 +444,13 @@ Submit feedback on predictions.
 Monitor the solution using CloudWatch logs:
 
 ```bash
-# View all logs
-sam logs --stack-name cart-prediction --region us-east-1
+# View all logs (use correct stack name)
+sam logs --stack-name enhanced-order-prediction --region us-east-1
 
-# View specific function logs
-aws logs tail /aws/lambda/cart-prediction-EnhancedFeatureEngineeringFunction --follow
+# View specific function logs (use actual function names)
+aws logs tail /aws/lambda/enhanced-order-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W --follow
+aws logs tail /aws/lambda/enhanced-order-prediction-DataValidationFunction-ydgv0ZZYdYsi --follow
+aws logs tail /aws/lambda/enhanced-order-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2 --follow
 ```
 
 ### CloudWatch Alarms
@@ -274,6 +459,14 @@ The solution includes pre-configured alarms for:
 - Lambda function errors
 - API Gateway 4xx/5xx errors
 - DynamoDB throttling
+
+### Comprehensive Documentation
+
+For detailed guidance on optimization and troubleshooting:
+
+- **[Lambda Optimization Guide](LAMBDA_OPTIMIZATION_GUIDE.md)** - Complete optimization process documentation
+- **[Troubleshooting Guide](TROUBLESHOOTING_OPTIMIZATION.md)** - Common issues and solutions
+- **[Layer Management Guide](LAYER_MANAGEMENT_GUIDE.md)** - Layer creation, updates, and maintenance
 
 ### Common Issues
 
@@ -291,6 +484,10 @@ The solution includes pre-configured alarms for:
    - Verify API Gateway deployment
    - Check Lambda function permissions
    - Review request parameters
+
+4. **Lambda Size Issues**
+   - See [Lambda Optimization Guide](LAMBDA_OPTIMIZATION_GUIDE.md) for size optimization
+   - Use [Troubleshooting Guide](TROUBLESHOOTING_OPTIMIZATION.md) for specific size-related errors
 
 ## 💰 Cost Optimization
 

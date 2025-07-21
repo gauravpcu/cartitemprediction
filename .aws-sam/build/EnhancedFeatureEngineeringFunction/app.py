@@ -1,27 +1,107 @@
 import json
-import boto3
 import csv
 import os
 import logging
 import urllib.parse
-from datetime import datetime
-import numpy as np
-import pandas as pd
+from datetime import datetime, date
+
+# Import dependencies with error handling
+try:
+    import boto3
+    import pandas as pd
+    import numpy as np
+except ImportError as e:
+    logging.error(f"Failed to import required dependencies: {e}")
+    raise
 
 # Configure logging
 logger = logging.getLogger()
 logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO'))
 
 s3_client = boto3.client('s3')
+dynamodb = boto3.resource('dynamodb')
 processed_bucket = os.environ.get('PROCESSED_BUCKET')
+product_lookup_table = os.environ.get('PRODUCT_LOOKUP_TABLE', 'product-lookup')
+
+def get_us_holidays(year):
+    """Get US federal holidays for a given year with proper date calculations"""
+    holidays = {}
+    
+    # Fixed date holidays
+    holidays[f'{year}-01-01'] = "New Year's Day"
+    holidays[f'{year}-06-19'] = "Juneteenth"
+    holidays[f'{year}-07-04'] = "Independence Day"
+    holidays[f'{year}-11-11'] = "Veterans Day"
+    holidays[f'{year}-12-25'] = "Christmas Day"
+    
+    # Calculate variable date holidays
+    # Martin Luther King Jr. Day - 3rd Monday in January
+    jan_1 = date(year, 1, 1)
+    days_to_first_monday = (7 - jan_1.weekday()) % 7
+    first_monday_jan = jan_1 + pd.Timedelta(days=days_to_first_monday)
+    mlk_day = first_monday_jan + pd.Timedelta(days=14)  # 3rd Monday
+    holidays[mlk_day.strftime('%Y-%m-%d')] = "Martin Luther King Jr. Day"
+    
+    # Presidents' Day - 3rd Monday in February
+    feb_1 = date(year, 2, 1)
+    days_to_first_monday = (7 - feb_1.weekday()) % 7
+    first_monday_feb = feb_1 + pd.Timedelta(days=days_to_first_monday)
+    presidents_day = first_monday_feb + pd.Timedelta(days=14)  # 3rd Monday
+    holidays[presidents_day.strftime('%Y-%m-%d')] = "Presidents' Day"
+    
+    # Memorial Day - Last Monday in May
+    may_31 = date(year, 5, 31)
+    weekday = may_31.weekday()  # 0=Monday, 1=Tuesday, ..., 6=Sunday
+    if weekday == 0:  # Already Monday
+        days_back = 0
+    else:
+        days_back = weekday
+    memorial_day = may_31 - pd.Timedelta(days=days_back)
+    holidays[memorial_day.strftime('%Y-%m-%d')] = "Memorial Day"
+    
+    # Labor Day - 1st Monday in September
+    sep_1 = date(year, 9, 1)
+    days_to_first_monday = (7 - sep_1.weekday()) % 7
+    labor_day = sep_1 + pd.Timedelta(days=days_to_first_monday)
+    holidays[labor_day.strftime('%Y-%m-%d')] = "Labor Day"
+    
+    # Columbus Day - 2nd Monday in October
+    oct_1 = date(year, 10, 1)
+    days_to_first_monday = (7 - oct_1.weekday()) % 7
+    first_monday_oct = oct_1 + pd.Timedelta(days=days_to_first_monday)
+    columbus_day = first_monday_oct + pd.Timedelta(days=7)  # 2nd Monday
+    holidays[columbus_day.strftime('%Y-%m-%d')] = "Columbus Day"
+    
+    # Thanksgiving Day - 4th Thursday in November
+    nov_1 = date(year, 11, 1)
+    days_to_first_thursday = (3 - nov_1.weekday()) % 7
+    first_thursday_nov = nov_1 + pd.Timedelta(days=days_to_first_thursday)
+    thanksgiving_day = first_thursday_nov + pd.Timedelta(days=21)  # 4th Thursday
+    holidays[thanksgiving_day.strftime('%Y-%m-%d')] = "Thanksgiving Day"
+    
+    return holidays
 
 def extract_temporal_features(df):
     """Extract time-based features from the CreateDate"""
     logger.info("Extracting temporal features...")
     
-    # Convert date strings to datetime objects if needed
+    # Convert date strings to datetime objects with flexible parsing
     if df['CreateDate'].dtype == 'object':
-        df['CreateDate'] = pd.to_datetime(df['CreateDate'])
+        # Try multiple date formats
+        try:
+            df['CreateDate'] = pd.to_datetime(df['CreateDate'], infer_datetime_format=True)
+        except:
+            # Fallback to common formats
+            for fmt in ['%m/%d/%Y', '%m/%d/%y', '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y']:
+                try:
+                    df['CreateDate'] = pd.to_datetime(df['CreateDate'], format=fmt)
+                    logger.info(f"Successfully parsed dates using format: {fmt}")
+                    break
+                except:
+                    continue
+            else:
+                # If all formats fail, use pandas' flexible parser
+                df['CreateDate'] = pd.to_datetime(df['CreateDate'], errors='coerce')
     
     # Basic date components
     df['OrderYear'] = df['CreateDate'].dt.year
@@ -30,7 +110,7 @@ def extract_temporal_features(df):
     df['OrderDayOfWeek'] = df['CreateDate'].dt.dayofweek  # Monday=0, Sunday=6
     df['OrderHour'] = df['CreateDate'].dt.hour
     
-    # Cyclical encoding of time features
+    # Cyclical encoding of time features - matching notebook implementation exactly
     df['DayOfWeek_sin'] = np.sin(df['OrderDayOfWeek'] * (2 * np.pi / 7))
     df['DayOfWeek_cos'] = np.cos(df['OrderDayOfWeek'] * (2 * np.pi / 7))
     
@@ -40,30 +120,22 @@ def extract_temporal_features(df):
     df['MonthOfYear_sin'] = np.sin((df['OrderMonth'] - 1) * (2 * np.pi / 12))
     df['MonthOfYear_cos'] = np.cos((df['OrderMonth'] - 1) * (2 * np.pi / 12))
     
-    # Quarter
+    # Quarter - matching notebook implementation exactly
     df['OrderQuarter'] = df['OrderMonth'].apply(lambda x: (x-1)//3 + 1)
     
-    # Is weekend
+    # Is weekend - matching notebook implementation exactly
     df['IsWeekend'] = df['OrderDayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
     
-    # US holidays (simplified for 2025)
-    holidays_2025 = {
-        '2025-01-01': 'New Year\'s Day',
-        '2025-01-20': 'Martin Luther King Jr. Day',
-        '2025-02-17': 'Presidents\' Day',
-        '2025-05-26': 'Memorial Day',
-        '2025-06-19': 'Juneteenth',
-        '2025-07-04': 'Independence Day',
-        '2025-09-01': 'Labor Day',
-        '2025-10-13': 'Columbus Day',
-        '2025-11-11': 'Veterans Day',
-        '2025-11-27': 'Thanksgiving Day',
-        '2025-12-25': 'Christmas Day'
-    }
+    # Get dynamic US holidays for the years present in the data
+    years_in_data = df['OrderYear'].unique()
+    all_holidays = {}
+    for year in years_in_data:
+        year_holidays = get_us_holidays(year)
+        all_holidays.update(year_holidays)
     
     df['Date'] = df['CreateDate'].dt.strftime('%Y-%m-%d')
-    df['IsHoliday'] = df['Date'].apply(lambda x: 1 if x in holidays_2025 else 0)
-    df['HolidayName'] = df['Date'].apply(lambda x: holidays_2025.get(x, ''))
+    df['IsHoliday'] = df['Date'].apply(lambda x: 1 if x in all_holidays else 0)
+    df['HolidayName'] = df['Date'].apply(lambda x: all_holidays.get(x, ''))
     
     return df
 
@@ -72,10 +144,28 @@ def calculate_product_demand_patterns(df):
     logger.info("Calculating product demand patterns...")
     
     # Group by customer, facility, product, and date to get daily quantities
-    product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date']).size().reset_index(name='Quantity')
+    # Use OrderUnits if available, otherwise count occurrences
+    if 'OrderUnits' in df.columns:
+        product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date'])['OrderUnits'].sum().reset_index(name='Quantity')
+    else:
+        product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date']).size().reset_index(name='Quantity')
     
-    # Add product information back
-    product_info = df[['ProductID', 'ProductDescription', 'ProductCategory']].drop_duplicates()
+    # Add product information back - handle different column names
+    product_cols = ['ProductID']
+    if 'ProductDescription' in df.columns:
+        product_cols.append('ProductDescription')
+    elif 'ProductName' in df.columns:
+        product_cols.append('ProductName')
+    
+    if 'ProductCategory' in df.columns:
+        product_cols.append('ProductCategory')
+    elif 'CategoryName' in df.columns:
+        product_cols.append('CategoryName')
+    
+    if 'VendorName' in df.columns:
+        product_cols.append('VendorName')
+    
+    product_info = df[product_cols].drop_duplicates()
     product_daily = product_daily.merge(product_info, on='ProductID', how='left')
     
     # Calculate product-specific features
@@ -86,12 +176,13 @@ def calculate_product_demand_patterns(df):
         # Sort by date
         group_sorted = group.sort_values('Date')
         
-        # Calculate features
+        # Calculate basic statistics
         total_orders = len(group_sorted)
         avg_quantity = group_sorted['Quantity'].mean()
         std_quantity = group_sorted['Quantity'].std()
         max_quantity = group_sorted['Quantity'].max()
         min_quantity = group_sorted['Quantity'].min()
+        median_quantity = group_sorted['Quantity'].median()
         
         # Calculate order frequency (days between orders)
         if total_orders > 1:
@@ -100,9 +191,36 @@ def calculate_product_demand_patterns(df):
         else:
             avg_days_between_orders = np.nan
         
-        # Get product info
-        product_name = group_sorted['ProductDescription'].iloc[0]
-        category_name = group_sorted['ProductCategory'].iloc[0]
+        # Calculate coefficient of variation (volatility measure)
+        cv = std_quantity / avg_quantity if avg_quantity > 0 else 0
+        
+        # Calculate trend (simple linear trend over time)
+        if total_orders > 2:
+            dates_numeric = pd.to_datetime(group_sorted['Date']).astype(int) / 10**9  # Convert to seconds
+            trend_slope = np.polyfit(dates_numeric, group_sorted['Quantity'], 1)[0]
+        else:
+            trend_slope = 0
+        
+        # Get product info with fallback names
+        product_name = ''
+        if 'ProductDescription' in group_sorted.columns:
+            product_name = group_sorted['ProductDescription'].iloc[0]
+        elif 'ProductName' in group_sorted.columns:
+            product_name = group_sorted['ProductName'].iloc[0]
+        
+        category_name = ''
+        if 'ProductCategory' in group_sorted.columns:
+            category_name = group_sorted['ProductCategory'].iloc[0]
+        elif 'CategoryName' in group_sorted.columns:
+            category_name = group_sorted['CategoryName'].iloc[0]
+        
+        vendor_name = ''
+        if 'VendorName' in group_sorted.columns:
+            vendor_name = group_sorted['VendorName'].iloc[0]
+        
+        # Get first and last order dates
+        first_order_date = group_sorted['Date'].min()
+        last_order_date = group_sorted['Date'].max()
         
         product_features.append({
             'CustomerID': customer_id,
@@ -110,100 +228,255 @@ def calculate_product_demand_patterns(df):
             'ProductID': product_id,
             'ProductName': product_name,
             'CategoryName': category_name,
+            'VendorName': vendor_name,
             'TotalOrders': total_orders,
             'AvgQuantity': avg_quantity,
             'StdQuantity': std_quantity if not pd.isna(std_quantity) else 0,
             'MaxQuantity': max_quantity,
             'MinQuantity': min_quantity,
-            'AvgDaysBetweenOrders': avg_days_between_orders
+            'MedianQuantity': median_quantity,
+            'CoefficientOfVariation': cv,
+            'TrendSlope': trend_slope,
+            'AvgDaysBetweenOrders': avg_days_between_orders,
+            'FirstOrderDate': first_order_date,
+            'LastOrderDate': last_order_date
         })
     
     return pd.DataFrame(product_features)
 
 def prepare_product_forecast_data(df):
-    """Prepare data for product-level forecasting"""
+    """Prepare data for product-level forecasting in SageMaker DeepAR format"""
     logger.info("Preparing product-level forecast data...")
     
-    # Group by customer, facility, product, and date
-    product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date']).size().reset_index(name='Quantity')
+    # Group by customer, facility, product, and date to get daily quantities
+    if 'OrderUnits' in df.columns:
+        product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date'])['OrderUnits'].sum().reset_index(name='Quantity')
+    else:
+        product_daily = df.groupby(['CustomerID', 'FacilityID', 'ProductID', 'Date']).size().reset_index(name='Quantity')
     
-    # Add product information
-    product_info = df[['ProductID', 'ProductDescription', 'ProductCategory']].drop_duplicates()
+    # Add product information - handle different column names
+    product_cols = ['ProductID']
+    if 'ProductDescription' in df.columns:
+        product_cols.append('ProductDescription')
+    elif 'ProductName' in df.columns:
+        product_cols.append('ProductName')
+    
+    if 'ProductCategory' in df.columns:
+        product_cols.append('ProductCategory')
+    elif 'CategoryName' in df.columns:
+        product_cols.append('CategoryName')
+    
+    if 'VendorName' in df.columns:
+        product_cols.append('VendorName')
+    
+    product_info = df[product_cols].drop_duplicates()
     product_daily = product_daily.merge(product_info, on='ProductID', how='left')
     
-    # Create item_id that includes ProductID for better identification
+    # Create item_id that includes customer, facility, and product for unique identification
     forecast_df = pd.DataFrame({
         'item_id': (product_daily['CustomerID'].astype(str) + '_' + 
                    product_daily['FacilityID'].astype(str) + '_' + 
                    product_daily['ProductID'].astype(str)),
-        'timestamp': product_daily['Date'],
+        'timestamp': pd.to_datetime(product_daily['Date']),
         'target_value': product_daily['Quantity'],
         'customer_id': product_daily['CustomerID'],
         'facility_id': product_daily['FacilityID'],
-        'product_id': product_daily['ProductID'],
-        'product_name': product_daily['ProductDescription'],
-        'category_name': product_daily['ProductCategory']
+        'product_id': product_daily['ProductID']
     })
+    
+    # Add product metadata
+    if 'ProductDescription' in product_daily.columns:
+        forecast_df['product_name'] = product_daily['ProductDescription']
+    elif 'ProductName' in product_daily.columns:
+        forecast_df['product_name'] = product_daily['ProductName']
+    else:
+        forecast_df['product_name'] = 'Product ' + forecast_df['product_id'].astype(str)
+    
+    if 'ProductCategory' in product_daily.columns:
+        forecast_df['category_name'] = product_daily['ProductCategory']
+    elif 'CategoryName' in product_daily.columns:
+        forecast_df['category_name'] = product_daily['CategoryName']
+    else:
+        forecast_df['category_name'] = 'General'
+    
+    if 'VendorName' in product_daily.columns:
+        forecast_df['vendor_name'] = product_daily['VendorName']
+    else:
+        forecast_df['vendor_name'] = 'Vendor' + forecast_df['product_id'].astype(str).str.replace('PROD', '')
+    
+    # Add temporal features required for SageMaker DeepAR (matching notebook implementation)
+    forecast_df['day_of_week'] = forecast_df['timestamp'].dt.dayofweek
+    forecast_df['month'] = forecast_df['timestamp'].dt.month
+    
+    # Sort by item_id and timestamp for proper time series format
+    forecast_df = forecast_df.sort_values(['item_id', 'timestamp']).reset_index(drop=True)
     
     return forecast_df
 
 def prepare_customer_level_forecast_data(df):
-    """Prepare data for customer-level forecasting (total order volume)"""
+    """Prepare data for customer-level forecasting (aggregated forecasts)"""
     logger.info("Preparing customer-level forecast data...")
     
     # Group by customer, facility, and date for total order count
-    customer_daily = df.groupby(['CustomerID', 'FacilityID', 'Date']).size().reset_index(name='TotalItems')
+    if 'OrderUnits' in df.columns:
+        customer_daily = df.groupby(['CustomerID', 'FacilityID', 'Date'])['OrderUnits'].sum().reset_index(name='TotalUnits')
+    else:
+        customer_daily = df.groupby(['CustomerID', 'FacilityID', 'Date']).size().reset_index(name='TotalItems')
     
     # Also calculate unique products ordered per day
     unique_products_daily = df.groupby(['CustomerID', 'FacilityID', 'Date'])['ProductID'].nunique().reset_index(name='UniqueProducts')
     
+    # Calculate total order value if Price column exists
+    if 'Price' in df.columns:
+        if 'OrderUnits' in df.columns:
+            df['OrderValue'] = df['OrderUnits'] * df['Price']
+        else:
+            df['OrderValue'] = df['Price']
+        order_value_daily = df.groupby(['CustomerID', 'FacilityID', 'Date'])['OrderValue'].sum().reset_index(name='TotalValue')
+        customer_daily = customer_daily.merge(order_value_daily, on=['CustomerID', 'FacilityID', 'Date'])
+    
     # Merge the data
     customer_daily = customer_daily.merge(unique_products_daily, on=['CustomerID', 'FacilityID', 'Date'])
     
-    # Create forecast format for total items
-    forecast_df_items = pd.DataFrame({
-        'item_id': (customer_daily['CustomerID'].astype(str) + '_' + 
-                   customer_daily['FacilityID'].astype(str) + '_TOTAL_ITEMS'),
-        'timestamp': customer_daily['Date'],
-        'target_value': customer_daily['TotalItems'],
-        'customer_id': customer_daily['CustomerID'],
-        'facility_id': customer_daily['FacilityID'],
-        'metric_type': 'TOTAL_ITEMS'
-    })
+    # Create forecast format for total items/units
+    if 'TotalUnits' in customer_daily.columns:
+        forecast_df_items = pd.DataFrame({
+            'item_id': (customer_daily['CustomerID'].astype(str) + '_' + 
+                       customer_daily['FacilityID'].astype(str) + '_TOTAL_UNITS'),
+            'timestamp': pd.to_datetime(customer_daily['Date']),
+            'target_value': customer_daily['TotalUnits'],
+            'customer_id': customer_daily['CustomerID'],
+            'facility_id': customer_daily['FacilityID'],
+            'metric_type': 'TOTAL_UNITS'
+        })
+    else:
+        forecast_df_items = pd.DataFrame({
+            'item_id': (customer_daily['CustomerID'].astype(str) + '_' + 
+                       customer_daily['FacilityID'].astype(str) + '_TOTAL_ITEMS'),
+            'timestamp': pd.to_datetime(customer_daily['Date']),
+            'target_value': customer_daily['TotalItems'],
+            'customer_id': customer_daily['CustomerID'],
+            'facility_id': customer_daily['FacilityID'],
+            'metric_type': 'TOTAL_ITEMS'
+        })
     
     # Create forecast format for unique products
     forecast_df_products = pd.DataFrame({
         'item_id': (customer_daily['CustomerID'].astype(str) + '_' + 
                    customer_daily['FacilityID'].astype(str) + '_UNIQUE_PRODUCTS'),
-        'timestamp': customer_daily['Date'],
+        'timestamp': pd.to_datetime(customer_daily['Date']),
         'target_value': customer_daily['UniqueProducts'],
         'customer_id': customer_daily['CustomerID'],
         'facility_id': customer_daily['FacilityID'],
         'metric_type': 'UNIQUE_PRODUCTS'
     })
     
-    # Combine both datasets
-    forecast_df = pd.concat([forecast_df_items, forecast_df_products], ignore_index=True)
+    # Create forecast format for total value if available
+    forecast_dfs = [forecast_df_items, forecast_df_products]
+    if 'TotalValue' in customer_daily.columns:
+        forecast_df_value = pd.DataFrame({
+            'item_id': (customer_daily['CustomerID'].astype(str) + '_' + 
+                       customer_daily['FacilityID'].astype(str) + '_TOTAL_VALUE'),
+            'timestamp': pd.to_datetime(customer_daily['Date']),
+            'target_value': customer_daily['TotalValue'],
+            'customer_id': customer_daily['CustomerID'],
+            'facility_id': customer_daily['FacilityID'],
+            'metric_type': 'TOTAL_VALUE'
+        })
+        forecast_dfs.append(forecast_df_value)
+    
+    # Combine all datasets
+    forecast_df = pd.concat(forecast_dfs, ignore_index=True)
+    
+    # Add temporal features required for SageMaker DeepAR (matching notebook implementation)
+    forecast_df['day_of_week'] = forecast_df['timestamp'].dt.dayofweek
+    forecast_df['month'] = forecast_df['timestamp'].dt.month
+    
+    # Sort by item_id and timestamp for proper time series format
+    forecast_df = forecast_df.sort_values(['item_id', 'timestamp']).reset_index(drop=True)
     
     return forecast_df
 
 def create_product_lookup_table(df):
-    """Create a lookup table for product information"""
+    """Create a lookup table for product information matching notebook schema"""
     logger.info("Creating product lookup table...")
     
-    product_lookup = df[['ProductID', 'ProductDescription', 'ProductCategory']].drop_duplicates()
+    # Handle different column names for product information
+    product_cols = ['ProductID']
+    product_name_col = None
+    category_name_col = None
+    vendor_name_col = None
     
-    # Add customer-product relationships
-    customer_products = df.groupby(['CustomerID', 'FacilityID', 'ProductID']).agg({
-        'Quantity': 'nunique',  # Number of times ordered
-        'CreateDate': ['min', 'max']  # First and last order dates
-    }).reset_index()
+    if 'ProductDescription' in df.columns:
+        product_cols.append('ProductDescription')
+        product_name_col = 'ProductDescription'
+    elif 'ProductName' in df.columns:
+        product_cols.append('ProductName')
+        product_name_col = 'ProductName'
     
-    # Flatten column names
-    customer_products.columns = ['CustomerID', 'FacilityID', 'ProductID', 'OrderCount', 'FirstOrderDate', 'LastOrderDate']
+    if 'ProductCategory' in df.columns:
+        product_cols.append('ProductCategory')
+        category_name_col = 'ProductCategory'
+    elif 'CategoryName' in df.columns:
+        product_cols.append('CategoryName')
+        category_name_col = 'CategoryName'
     
-    # Merge with product info
+    if 'VendorName' in df.columns:
+        product_cols.append('VendorName')
+        vendor_name_col = 'VendorName'
+    
+    # Create basic product lookup with standardized column names
+    product_lookup = df[product_cols].drop_duplicates()
+    
+    # Standardize column names to match notebook schema
+    rename_dict = {'ProductID': 'ProductID'}
+    if product_name_col:
+        rename_dict[product_name_col] = 'ProductName'
+    if category_name_col:
+        rename_dict[category_name_col] = 'CategoryName'
+    if vendor_name_col:
+        rename_dict[vendor_name_col] = 'vendorName'
+    
+    product_lookup = product_lookup.rename(columns=rename_dict)
+    
+    # Add missing columns with default values if not present
+    if 'ProductName' not in product_lookup.columns:
+        product_lookup['ProductName'] = 'Product ' + product_lookup['ProductID'].astype(str)
+    if 'CategoryName' not in product_lookup.columns:
+        product_lookup['CategoryName'] = 'General'
+    if 'vendorName' not in product_lookup.columns:
+        product_lookup['vendorName'] = 'Vendor' + product_lookup['ProductID'].astype(str).str.replace('PROD', '')
+    
+    # Create customer-product relationships matching notebook schema
+    # Use OrderUnits if available, otherwise count occurrences
+    if 'OrderUnits' in df.columns:
+        customer_products = df.groupby(['CustomerID', 'FacilityID', 'ProductID']).agg({
+            'OrderUnits': 'count',  # Number of order lines
+            'CreateDate': ['min', 'max']  # First and last order dates
+        }).reset_index()
+        customer_products.columns = ['CustomerID', 'FacilityID', 'ProductID', 'OrderCount', 'FirstOrderDate', 'LastOrderDate']
+    else:
+        customer_products = df.groupby(['CustomerID', 'FacilityID', 'ProductID']).agg({
+            'CreateDate': ['count', 'min', 'max']  # Count, first and last order dates
+        }).reset_index()
+        customer_products.columns = ['CustomerID', 'FacilityID', 'ProductID', 'OrderCount', 'FirstOrderDate', 'LastOrderDate']
+    
+    # Merge with product info to create customer-product lookup matching notebook schema
     customer_product_lookup = customer_products.merge(product_lookup, on='ProductID', how='left')
+    
+    # Ensure proper data types for dates
+    customer_product_lookup['FirstOrderDate'] = pd.to_datetime(customer_product_lookup['FirstOrderDate'])
+    customer_product_lookup['LastOrderDate'] = pd.to_datetime(customer_product_lookup['LastOrderDate'])
+    
+    # Reorder columns to match notebook schema exactly
+    # Schema: ProductID, ProductName, CategoryName, vendorName, CustomerID, FacilityID, OrderCount, FirstOrderDate, LastOrderDate
+    customer_product_lookup = customer_product_lookup[[
+        'ProductID', 'ProductName', 'CategoryName', 'vendorName', 
+        'CustomerID', 'FacilityID', 'OrderCount', 'FirstOrderDate', 'LastOrderDate'
+    ]]
+    
+    logger.info(f"Created product lookup with {len(product_lookup)} unique products")
+    logger.info(f"Created customer-product lookup with {len(customer_product_lookup)} relationships")
     
     return product_lookup, customer_product_lookup
 
@@ -226,6 +499,58 @@ def process_csv_data(file_path):
             processed_data.append(row)
     
     return processed_data
+
+def save_lookup_tables_to_dynamodb(product_lookup, customer_product_lookup):
+    """Save lookup tables to DynamoDB"""
+    logger.info("Saving lookup tables to DynamoDB...")
+    
+    try:
+        # Use the single ProductLookupTable for all data
+        product_table = dynamodb.Table(product_lookup_table)
+        
+        # Save product lookup data with correct key names
+        with product_table.batch_writer() as batch:
+            for _, row in product_lookup.iterrows():
+                item = {
+                    'product_id': str(row['ProductID']),  # Match DynamoDB schema
+                    'record_type': 'PRODUCT',  # Distinguish record types
+                    'product_name': str(row['ProductName']),
+                    'category_name': str(row['CategoryName']),
+                    'vendor_name': str(row['vendorName'])
+                }
+                batch.put_item(Item=item)
+        
+        logger.info(f"Saved {len(product_lookup)} product records to DynamoDB")
+        
+        # Save customer-product lookup data with correct key names
+        with product_table.batch_writer() as batch:
+            for _, row in customer_product_lookup.iterrows():
+                # Create composite key for customer-product relationships
+                customer_facility_key = f"{row['CustomerID']}#{row['FacilityID']}"
+                product_customer_key = f"{row['ProductID']}#{customer_facility_key}"
+                
+                item = {
+                    'product_id': product_customer_key,  # Composite key for uniqueness
+                    'customer_facility': customer_facility_key,  # GSI key
+                    'record_type': 'CUSTOMER_PRODUCT',  # Distinguish record types
+                    'customer_id': str(row['CustomerID']),
+                    'facility_id': str(row['FacilityID']),
+                    'base_product_id': str(row['ProductID']),
+                    'product_name': str(row['ProductName']),
+                    'category_name': str(row['CategoryName']),
+                    'vendor_name': str(row['vendorName']),
+                    'order_count': int(row['OrderCount']),
+                    'first_order_date': row['FirstOrderDate'].isoformat(),
+                    'last_order_date': row['LastOrderDate'].isoformat()
+                }
+                batch.put_item(Item=item)
+        
+        logger.info(f"Saved {len(customer_product_lookup)} customer-product records to DynamoDB")
+        
+    except Exception as e:
+        logger.error(f"Error saving to DynamoDB: {str(e)}")
+        # Don't fail the entire process if DynamoDB save fails
+        pass
 
 def create_lookup_files(df):
     """Create product and customer-product lookup files"""
@@ -272,10 +597,44 @@ def lambda_handler(event, context):
             'Productdescription': 'ProductDescription',
             'Productcategory': 'ProductCategory',
             'Createdate': 'CreateDate',
-            'Quantity': 'Quantity'
+            'Quantity': 'Quantity',
+            # Handle new data format
+            'ProductName': 'ProductDescription',
+            'CategoryName': 'ProductCategory',
+            'Price': 'UnitPrice',
+            'VendorName': 'VendorName'
         }
         df.rename(columns={k: v for k, v in col_map.items() if k in df.columns}, inplace=True)
-        df['CreateDate'] = pd.to_datetime(df['CreateDate'], format='%m/%d/%y')
+        
+        # Flexible date parsing with detailed logging
+        logger.info(f"Sample CreateDate values: {df['CreateDate'].head().tolist()}")
+        try:
+            df['CreateDate'] = pd.to_datetime(df['CreateDate'], infer_datetime_format=True)
+            logger.info("Successfully parsed dates using infer_datetime_format")
+        except Exception as e:
+            logger.warning(f"infer_datetime_format failed: {str(e)}")
+            # Try multiple date formats
+            date_formats = ['%m/%d/%Y', '%m/%d/%y', '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y', '%Y/%m/%d']
+            parsed = False
+            for fmt in date_formats:
+                try:
+                    df['CreateDate'] = pd.to_datetime(df['CreateDate'], format=fmt)
+                    logger.info(f"Successfully parsed dates using format: {fmt}")
+                    parsed = True
+                    break
+                except Exception as fmt_error:
+                    logger.debug(f"Format {fmt} failed: {str(fmt_error)}")
+                    continue
+            
+            if not parsed:
+                # If all formats fail, use pandas' flexible parser
+                logger.warning("All specific formats failed, using flexible parser")
+                df['CreateDate'] = pd.to_datetime(df['CreateDate'], errors='coerce')
+                
+        # Check for any failed date conversions
+        null_dates = df['CreateDate'].isnull().sum()
+        if null_dates > 0:
+            logger.warning(f"Found {null_dates} rows with unparseable dates")
 
         # Feature engineering
         df = extract_temporal_features(df)
@@ -323,6 +682,9 @@ def lambda_handler(event, context):
         customer_forecast_df.to_csv(customer_forecast_file, index=False)
         customer_forecast_key = f'forecast_format/{timestamp}/customer_forecast_data.csv'
         s3_client.upload_file(customer_forecast_file, processed_bucket, customer_forecast_key)
+        
+        # Save lookup tables to DynamoDB as well
+        save_lookup_tables_to_dynamodb(product_lookup, customer_product_lookup)
         
         logger.info(f"Successfully processed and uploaded all data files")
         

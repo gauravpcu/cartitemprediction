@@ -1,31 +1,6 @@
-CreateDate,CustomerId,FacilityId,ProductID,Quantity,UnitPrice,ProductCategory,ProductDescription
-4/17/2025,1045,6417,4593221,1,147,Office Supplies-General ,"Machine, Comb Binding, Manual, 150 sheets"
-4/17/2025,1045,6417,4593543,1,26.5,Office Supplies-General ,"Wire Bindings, 130 Sheet, Black, Pk"
-4/8/2025,1045,3934,4442436,1,1210,Equipment/DME,"Protekt® 500 Stand, 34500"
-4/8/2025,1045,3934,4328972,1,45,Equipment/DME,"Proactive Lift Foot Strap, PROAC31230"
-4/9/2025,1045,6359,4381769,1,33.99,Equipment/DME,"Medline Economy Exercise Band, Non-Latex, Green, Medium, 50 yd. Roll, MDSPH021H"
-4/7/2025,1141,10942,1308933,2,48,Produce/Frsh Eggs,"Kiwis, Fresh, Case"
-4/7/2025,1141,10942,1735145,2,24.75,Produce/Frsh Eggs,"BANANA, GREEN PETITE 150 COUNT FRESH REF"
-4/7/2025,1141,10942,1738841,5,22.8,Frozen Foods,"VEGETABLE BLEND, CALIFORNIA NORMANDY  FROZEN NK"
-4/7/2025,1141,10942,1672054,12,29.88,Frozen Foods,VEGT SPINACH CHOPPED FROZEN NK
-4/7/2025,1141,10942,1668363,6,27.12,Frozen Foods,VEGT ITALIAN BLEND FROZEN NK
-4/7/2025,1141,10942,1308721,8,34.56,Frozen Foods,Froz Squash Yellow Sliced 12/3lb
-4/7/2025,1141,10942,1308726,8,34.2,Frozen Foods,"Froz Zucchini, Green Squash, Sliced  CASE"
-4/7/2025,1141,10942,1672045,12,24.24,Frozen Foods,VEGT CAULIFLOWER FROZEN NK
-4/7/2025,1141,10942,1672044,12,23.9,Frozen Foods,VEGT CARROTS WHOLE BABY FROZEN
-4/7/2025,1141,10942,1308700,6,17.9,Frozen Foods,Froz Mixed Vegetables NK
-4/7/2025,1141,10942,1308565,2,30.07,Produce/Frsh Eggs,"Oranges, Fresh, 100-138ct"
-4/7/2025,1141,10942,1308556,2,43.07,Produce/Frsh Eggs,"Grapes, Seedless Green, 18 lb, cs"
-4/7/2025,1141,10942,1308557,2,32.05,Produce/Frsh Eggs,"Grapes, Seedless Red, 18 lb"
-4/7/2025,1141,10942,1308583,2,33,Produce/Frsh Eggs,"Tomato, Plum "
-4/7/2025,1141,10942,1309107,2,21.05,Produce/Frsh Eggs,"Potato, Idaho, 50 lb, 100ct"
-4/7/2025,1141,10942,1672049,4,27.12,Frozen Foods,VEGT ORIENTAL MIXED VEGETABLE FROZEN NK
-4/7/2025,1141,10942,1308543,1,27.05,Produce/Frsh Eggs,"Cantaloupe, Fresh"
-4/7/2025,1203,9338,4614554,1,8.75,HOUSEKEEPING Supplies,Tilt Valves Replacement Part | Used to Fill Latex Balloons | Brass and Rubber Material | Primarily Applicable to Helium Gas Service | Long Serving Life | Low Maintenance
-4/3/2025,1141,4678,1308836,3,32.4,Grocery,"Sugar, Light Brown 24/1lb or 12/2 lb"
-4/3/2025,1141,4678,1668352,3,15.9,Grocery,SUGAR SUBSTITUTE PINK PACKET SACCHARIN
-4/3/2025,1141,4678,1308871,2,123.6,Produce/Frsh Eggs,"Eggs, Fresh, X-Large 30dz"
-4/3/2025,1141,4678,1308733,1,32.14,Nutritionals,"Health Shake, Reg, Chocolate 75/4 oz"
-4/3/2025,1141,4678,1308737,3,32.14,Nutritionals,"Health Shake, Reg, Vanilla 75/4 oz"
-4/3/2025,1141,4678,1308735,3,23.1,Nutritionals,"Health Shake, SF, Vanilla 50/4 oz"
-4/3/2025,1141,4678,1309035,3,31.44,Nutritionals,"Mighty Shake, Honey Thick, SF (NSA) Vanilla 50/4 oz"
+PortalID,CreateDate,CustomerID,FacilityID,ProductID,Quantity,UnitPrice,OrderID,CategoryName,ProductName
+HYB,2/8/25,PHCURGENTCARE,34,1876,6,4,82476,HYB,WIPECAVIDISINFECT6X6.75
+HYB,2/8/25,PHCURGENTCARE,34,4504,4,4.97,82476,HYB,SPRAYS: CITRACE GERMICIDAL DEODORIZER SPRAY 14 OZ.
+HYB,2/8/25,PHCURGENTCARE,34,12705,6,3.49,82476,HYB,Mask ASTM Level 1 Procedure Face Mask with Ear Loops Blue
+HYB,2/8/25,PHCURGENTCARE,34,20255,1,10.3,82476,HYB,Thermal EKG Paper with White Patient Data Area Red Grid 155mm W Z-Fold Hole Queue 8.5 x 11 300 Sheets  Pack
+HYB,2/8/25,PHCURGENTCARE,34,802,6,184.8,82476,HYB,BINAXNOW INFLUENZA AB CARD 2

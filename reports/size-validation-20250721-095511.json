@@ -1,0 +1,420 @@
+{
+  "validation_timestamp": "2025-07-21T09:55:15.587381",
+  "summary": {
+    "total_items": 12,
+    "passed": 12,
+    "failed": 0,
+    "deployment_ready": true
+  },
+  "layers": {
+    "count": 3,
+    "total_size_mb": 137.86,
+    "passed": 3
+  },
+  "functions": {
+    "count": 9,
+    "total_size_mb": 0.22,
+    "passed": 9
+  },
+  "details": [
+    {
+      "name": "ml-libraries",
+      "type": "layer",
+      "size_mb": 34.7,
+      "size_limit_mb": 262,
+      "within_limit": true,
+      "compressed_size_mb": 11.45,
+      "file_count": 451,
+      "largest_files": [
+        {
+          "path": "sklearn/_loss/_loss.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 3.066,
+          "size_bytes": 3215241
+        },
+        {
+          "path": "sklearn/utils/sparsefuncs_fast.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.91,
+          "size_bytes": 953872
+        },
+        {
+          "path": "sklearn/neighbors/_kd_tree.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.808,
+          "size_bytes": 847464
+        },
+        {
+          "path": "sklearn/neighbors/_ball_tree.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.806,
+          "size_bytes": 845584
+        },
+        {
+          "path": "sklearn/metrics/_dist_metrics.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.753,
+          "size_bytes": 789944
+        },
+        {
+          "path": "sklearn/tree/_tree.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.623,
+          "size_bytes": 653048
+        },
+        {
+          "path": "sklearn/datasets/_svmlight_format_fast.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.616,
+          "size_bytes": 645616
+        },
+        {
+          "path": "sklearn/preprocessing/_target_encoder_fast.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.595,
+          "size_bytes": 624168
+        },
+        {
+          "path": "sklearn/svm/_libsvm.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.573,
+          "size_bytes": 600384
+        },
+        {
+          "path": "sklearn/cluster/_k_means_common.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.559,
+          "size_bytes": 585761
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:12.553164"
+    },
+    {
+      "name": "core-data-science",
+      "type": "layer",
+      "size_mb": 84.27,
+      "size_limit_mb": 262,
+      "within_limit": true,
+      "compressed_size_mb": 25.67,
+      "file_count": 2001,
+      "largest_files": [
+        {
+          "path": "numpy.libs/libopenblas64_p-r0-0cf96a72.3.23.dev.so",
+          "size_mb": 33.496,
+          "size_bytes": 35123345
+        },
+        {
+          "path": "numpy/core/_multiarray_umath.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 7.083,
+          "size_bytes": 7426857
+        },
+        {
+          "path": "numpy/core/_simd.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 3.364,
+          "size_bytes": 3527040
+        },
+        {
+          "path": "numpy.libs/libgfortran-040039e1.so.5.0.0",
+          "size_mb": 2.562,
+          "size_bytes": 2686065
+        },
+        {
+          "path": "pandas/_libs/join.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 2.429,
+          "size_bytes": 2547304
+        },
+        {
+          "path": "pandas/_libs/algos.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 1.983,
+          "size_bytes": 2078984
+        },
+        {
+          "path": "pandas/_libs/groupby.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 1.932,
+          "size_bytes": 2025640
+        },
+        {
+          "path": "pandas/_libs/hashtable.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 1.741,
+          "size_bytes": 1825128
+        },
+        {
+          "path": "pandas/_libs/interval.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 1.339,
+          "size_bytes": 1404232
+        },
+        {
+          "path": "numpy/random/_generator.cpython-39-x86_64-linux-gnu.so",
+          "size_mb": 0.935,
+          "size_bytes": 980408
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:14.733823"
+    },
+    {
+      "name": "aws-utilities",
+      "type": "layer",
+      "size_mb": 18.89,
+      "size_limit_mb": 262,
+      "within_limit": true,
+      "compressed_size_mb": 13.61,
+      "file_count": 2006,
+      "largest_files": [
+        {
+          "path": "botocore/data/endpoints.json",
+          "size_mb": 1.183,
+          "size_bytes": 1240732
+        },
+        {
+          "path": "botocore/data/ec2/2016-11-15/service-2.json.gz",
+          "size_mb": 0.419,
+          "size_bytes": 439666
+        },
+        {
+          "path": "botocore/data/sagemaker/2017-07-24/service-2.json.gz",
+          "size_mb": 0.302,
+          "size_bytes": 317169
+        },
+        {
+          "path": "botocore/cacert.pem",
+          "size_mb": 0.254,
+          "size_bytes": 266617
+        },
+        {
+          "path": "botocore/data/quicksight/2018-04-01/service-2.json.gz",
+          "size_mb": 0.174,
+          "size_bytes": 182269
+        },
+        {
+          "path": "botocore/data/s3/2006-03-01/service-2.json.gz",
+          "size_mb": 0.16,
+          "size_bytes": 167584
+        },
+        {
+          "path": "botocore/data/securityhub/2018-10-26/service-2.json.gz",
+          "size_mb": 0.156,
+          "size_bytes": 163523
+        },
+        {
+          "path": "botocore/data/mediaconvert/2017-08-29/service-2.json.gz",
+          "size_mb": 0.155,
+          "size_bytes": 162792
+        },
+        {
+          "path": "botocore/data/rds/2014-10-31/service-2.json.gz",
+          "size_mb": 0.155,
+          "size_bytes": 162269
+        },
+        {
+          "path": "botocore/data/glue/2017-03-31/service-2.json.gz",
+          "size_mb": 0.154,
+          "size_bytes": 161414
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.498730"
+    },
+    {
+      "name": "recommend_api",
+      "type": "function",
+      "size_mb": 0.01,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 2,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.009,
+          "size_bytes": 9957
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 149
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.501282"
+    },
+    {
+      "name": "s3_notification_setup",
+      "type": "function",
+      "size_mb": 0.0,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 2,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.005,
+          "size_bytes": 5101
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 141
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.502492"
+    },
+    {
+      "name": "forecast_setup",
+      "type": "function",
+      "size_mb": 0.0,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 1,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.0,
+          "size_bytes": 0
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.502836"
+    },
+    {
+      "name": "prediction_api",
+      "type": "function",
+      "size_mb": 0.01,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 2,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.008,
+          "size_bytes": 8455
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 149
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.504377"
+    },
+    {
+      "name": "enhanced_feature_engineering",
+      "type": "function",
+      "size_mb": 0.07,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.02,
+      "file_count": 4,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.031,
+          "size_bytes": 32754
+        },
+        {
+          "path": "__pycache__/app.cpython-313.pyc",
+          "size_mb": 0.029,
+          "size_bytes": 30545
+        },
+        {
+          "path": "__pycache__/app.cpython-310.pyc",
+          "size_mb": 0.01,
+          "size_bytes": 10564
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 64
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.529931"
+    },
+    {
+      "name": "enhanced_predictions",
+      "type": "function",
+      "size_mb": 0.06,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.02,
+      "file_count": 3,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.032,
+          "size_bytes": 33847
+        },
+        {
+          "path": "__pycache__/app.cpython-313.pyc",
+          "size_mb": 0.027,
+          "size_bytes": 28457
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 41
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.562269"
+    },
+    {
+      "name": "data_validation",
+      "type": "function",
+      "size_mb": 0.05,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.02,
+      "file_count": 3,
+      "largest_files": [
+        {
+          "path": "__pycache__/app.cpython-313.pyc",
+          "size_mb": 0.023,
+          "size_bytes": 24151
+        },
+        {
+          "path": "app.py",
+          "size_mb": 0.022,
+          "size_bytes": 23093
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 41
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.585444"
+    },
+    {
+      "name": "feedback_api",
+      "type": "function",
+      "size_mb": 0.01,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 2,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.008,
+          "size_bytes": 8219
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 81
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.586578"
+    },
+    {
+      "name": "product_prediction_api",
+      "type": "function",
+      "size_mb": 0.01,
+      "size_limit_mb": 50,
+      "within_limit": true,
+      "compressed_size_mb": 0.0,
+      "file_count": 2,
+      "largest_files": [
+        {
+          "path": "app.py",
+          "size_mb": 0.007,
+          "size_bytes": 7810
+        },
+        {
+          "path": "requirements.txt",
+          "size_mb": 0.0,
+          "size_bytes": 149
+        }
+      ],
+      "timestamp": "2025-07-21T09:55:15.587340"
+    }
+  ]
+}

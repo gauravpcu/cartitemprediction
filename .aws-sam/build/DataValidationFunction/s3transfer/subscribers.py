@@ -30,19 +30,20 @@ class BaseSubscriber:
         return super().__new__(cls)
 
     @classmethod
-    @lru_cache
+    @lru_cache()
     def _validate_subscriber_methods(cls):
         for subscriber_type in cls.VALID_SUBSCRIBER_TYPES:
             subscriber_method = getattr(cls, 'on_' + subscriber_type)
             if not callable(subscriber_method):
                 raise InvalidSubscriberMethodError(
-                    f'Subscriber method {subscriber_method} must be callable.'
+                    'Subscriber method %s must be callable.'
+                    % subscriber_method
                 )
 
             if not accepts_kwargs(subscriber_method):
                 raise InvalidSubscriberMethodError(
-                    f'Subscriber method {subscriber_method} must accept keyword '
-                    'arguments (**kwargs)'
+                    'Subscriber method %s must accept keyword '
+                    'arguments (**kwargs)' % subscriber_method
                 )
 
     def on_queued(self, future, **kwargs):

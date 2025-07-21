@@ -1,0 +1,33 @@
+FROM public.ecr.aws/lambda/python:3.9
+
+# Install build dependencies
+RUN yum update -y && \
+    yum install -y gcc gcc-c++ make && \
+    yum clean all
+
+# Set working directory
+WORKDIR /opt
+
+# Copy requirements files
+COPY layers/core-data-science/requirements.txt /opt/core-data-science-requirements.txt
+COPY layers/ml-libraries/requirements.txt /opt/ml-libraries-requirements.txt
+
+# Build core data science layer
+RUN mkdir -p /opt/core-data-science/python && \
+    pip install -r /opt/core-data-science-requirements.txt -t /opt/core-data-science/python/ --no-cache-dir
+
+# Build ML libraries layer (without scipy to reduce size)
+RUN mkdir -p /opt/ml-libraries/python && \
+    pip install scikit-learn==1.5.2 joblib==1.4.2 -t /opt/ml-libraries/python/ --no-cache-dir
+
+# Optimize layers
+RUN find /opt/*/python -name "*.pyc" -delete && \
+    find /opt/*/python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/*/python -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/*/python -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/*/python -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Create output directory
+RUN mkdir -p /output
+
+CMD ["sh", "-c", "cp -r /opt/core-data-science /output/ && cp -r /opt/ml-libraries /output/"]

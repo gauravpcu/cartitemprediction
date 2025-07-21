@@ -26,7 +26,6 @@ from operator import itemgetter
 
 from botocore.compat import (
     HAS_CRT,
-    MD5_AVAILABLE,  # noqa: F401
     HTTPHeaders,
     encodebytes,
     ensure_unicode,
@@ -36,17 +35,16 @@ from botocore.compat import (
     urlsplit,
     urlunsplit,
 )
-from botocore.exceptions import (
-    NoAuthTokenError,
-    NoCredentialsError,
-    UnknownSignatureVersionError,
-    UnsupportedSignatureVersionError,
-)
+from botocore.exceptions import NoAuthTokenError, NoCredentialsError
 from botocore.utils import (
     is_valid_ipv6_endpoint_url,
     normalize_url_path,
     percent_encode_sequence,
 )
+
+# Imports for backwards compatibility
+from botocore.compat import MD5_AVAILABLE  # noqa
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +60,6 @@ ISO8601 = '%Y-%m-%dT%H:%M:%SZ'
 SIGV4_TIMESTAMP = '%Y%m%dT%H%M%SZ'
 SIGNED_HEADERS_BLACKLIST = [
     'expect',
-    'transfer-encoding',
     'user-agent',
     'x-amzn-trace-id',
 ]
@@ -85,7 +82,7 @@ def _host_from_url(url):
     }
     if url_parts.port is not None:
         if url_parts.port != default_ports.get(url_parts.scheme):
-            host = f'{host}:{url_parts.port}'
+            host = '%s:%d' % (host, url_parts.port)
     return host
 
 
@@ -1135,19 +1132,6 @@ class BearerAuth(TokenSigner):
         request.headers['Authorization'] = auth_header
 
 
-def resolve_auth_type(auth_trait):
-    for auth_type in auth_trait:
-        if auth_type == 'smithy.api#noAuth':
-            return AUTH_TYPE_TO_SIGNATURE_VERSION[auth_type]
-        elif auth_type in AUTH_TYPE_TO_SIGNATURE_VERSION:
-            signature_version = AUTH_TYPE_TO_SIGNATURE_VERSION[auth_type]
-            if signature_version in AUTH_TYPE_MAPS:
-                return signature_version
-        else:
-            raise UnknownSignatureVersionError(signature_version=auth_type)
-    raise UnsupportedSignatureVersionError(signature_version=auth_trait)
-
-
 AUTH_TYPE_MAPS = {
     'v2': SigV2Auth,
     'v3': SigV3Auth,
@@ -1176,10 +1160,3 @@ else:
             's3v4-query': S3SigV4QueryAuth,
         }
     )
-
-AUTH_TYPE_TO_SIGNATURE_VERSION = {
-    'aws.auth#sigv4': 'v4',
-    'aws.auth#sigv4a': 'v4a',
-    'smithy.api#httpBearerAuth': 'bearer',
-    'smithy.api#noAuth': 'none',
-}

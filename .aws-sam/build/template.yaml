@@ -39,6 +39,16 @@ Globals:
           Ref: Environment
         ENABLE_PRODUCT_FORECASTING:
           Ref: EnableProductLevelForecasting
+        PREDICTION_LENGTH: '14'
+        CONTEXT_LENGTH: '28'
+        BEDROCK_MODEL_ID:
+          Ref: BedrockModelId
+        BEDROCK_MAX_TOKENS: '2000'
+        BEDROCK_TEMPERATURE: '0.2'
+        BEDROCK_ANTHROPIC_VERSION: bedrock-2023-05-31
+        ENABLE_DYNAMIC_HOLIDAYS: 'true'
+        DEFAULT_REGION:
+          Ref: AWS::Region
 Resources:
   RawDataBucket:
     Type: AWS::S3::Bucket

@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-07-18 15:45:07",
+  "summary": {
+    "total_test_suites": 6,
+    "passed_suites": 2,
+    "failed_suites": 4,
+    "total_execution_time": 1.2033777236938477
+  },
+  "layer_status": {
+    "core_data_science": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/layers/core-data-science/python"
+    },
+    "ml_libraries": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/layers/ml-libraries/python"
+    },
+    "aws_utilities": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/layers/aws-utilities/python"
+    }
+  },
+  "function_status": {
+    "data_validation": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/functions/data_validation/app.py"
+    },
+    "enhanced_feature_engineering": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/functions/enhanced_feature_engineering/app.py"
+    },
+    "enhanced_predictions": {
+      "available": true,
+      "path": "/Users/gaurav/Desktop/Work/Kiro/itemprediction/functions/enhanced_predictions/app.py"
+    }
+  },
+  "test_results": [
+    {
+      "success": false,
+      "execution_time": 0.730198860168457,
+      "description": "Layer Integration Tests"
+    },
+    {
+      "success": false,
+      "execution_time": 0.0068378448486328125,
+      "description": "Function Integration Tests"
+    },
+    {
+      "success": false,
+      "execution_time": 0.005442142486572266,
+      "description": "Performance Tests"
+    },
+    {
+      "success": true,
+      "execution_time": 0.24019289016723633,
+      "description": "Core Data Science Layer Tests"
+    },
+    {
+      "success": false,
+      "execution_time": 0.032765865325927734,
+      "description": "ML Libraries Layer Tests"
+    },
+    {
+      "success": true,
+      "execution_time": 0.18794012069702148,
+      "description": "AWS Utilities Layer Tests"
+    }
+  ]
+}

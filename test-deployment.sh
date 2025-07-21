@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-STACK_NAME="cart-prediction"
+STACK_NAME="enhanced-order-prediction"
 REGION="us-east-1"
 
 # Colors for output
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
         --help)
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
-            echo "  --stack-name NAME    CloudFormation stack name (default: cart-prediction)"
+            echo "  --stack-name NAME    CloudFormation stack name (default: enhanced-order-prediction)"
             echo "  --region REGION      AWS region (default: us-east-1)"
             echo "  --help               Show this help message"
             exit 0
