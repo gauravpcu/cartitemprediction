@@ -59,15 +59,15 @@ def test_api_endpoints():
         # Get bucket names dynamically from CloudFormation
         try:
             cf_client = boto3.client('cloudformation')
-            stack_outputs = cf_client.describe_stacks(StackName='enhanced-order-prediction')['Stacks'][0]['Outputs']
+            stack_outputs = cf_client.describe_stacks(StackName='item-prediction')['Stacks'][0]['Outputs']
             raw_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'RawDataBucketName')
             processed_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'ProcessedDataBucketName')
             buckets = [raw_bucket, processed_bucket]
         except:
             # Fallback to current bucket names
             buckets = [
-                'cart-prediction-rawdatabucket-6qnhmltcw42k',
-                'cart-prediction-processeddatabucket-btkiig614wgu'
+                'item-prediction-raw-data-dev-533267165065',
+                'item-prediction-processed-data-dev-533267165065'
             ]
         
         for bucket in buckets:

@@ -333,13 +333,13 @@ class PostDeploymentValidator:
         
         # Test Lambda functions
         functions_to_test = [
-            'DataValidationFunction',
-            'EnhancedFeatureEngineeringFunction', 
-            'EnhancedPredictionsFunction',
-            'PredictionAPIFunction',
-            'ProductPredictionAPIFunction',
-            'RecommendAPIFunction',
-            'FeedbackAPIFunction'
+            'DataValidation',
+            'FeatureEngineering', 
+            'Predictions',
+            'PredictionAPI',
+            'ProductPredictionAPI',
+            'RecommendAPI',
+            'FeedbackAPI'
         ]
         
         for function_name in functions_to_test:
@@ -356,9 +356,9 @@ class PostDeploymentValidator:
         
         # Test layers
         layer_function_mapping = {
-            'core-data-science-layer': ['DataValidationFunction', 'EnhancedFeatureEngineeringFunction', 'EnhancedPredictionsFunction'],
-            'ml-libraries-layer': ['EnhancedFeatureEngineeringFunction', 'EnhancedPredictionsFunction'],
-            'aws-utilities-layer': ['DataValidationFunction', 'EnhancedFeatureEngineeringFunction', 'EnhancedPredictionsFunction']
+            'core-data-science-layer': ['DataValidation', 'FeatureEngineering', 'Predictions'],
+            'ml-libraries-layer': ['FeatureEngineering', 'Predictions'],
+            'aws-utilities-layer': ['DataValidation', 'FeatureEngineering', 'Predictions']
         }
         
         for layer_name, function_names in layer_function_mapping.items():

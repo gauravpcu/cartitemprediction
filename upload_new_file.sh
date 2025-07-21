@@ -3,8 +3,8 @@
 # Simple script to upload a new data file to test the optimized Lambda deployment
 
 # Get bucket names from CloudFormation stack outputs
-RAW_BUCKET=$(aws cloudformation describe-stacks --stack-name enhanced-order-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`RawDataBucketName`].OutputValue' --output text 2>/dev/null || echo "enhanced-order-prediction-rawdatabucket-sankmq5hrvsu")
-PROCESSED_BUCKET=$(aws cloudformation describe-stacks --stack-name enhanced-order-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`ProcessedDataBucketName`].OutputValue' --output text 2>/dev/null || echo "enhanced-order-prediction-processeddatabucket-3sdqfh2qnotf")
+RAW_BUCKET=$(aws cloudformation describe-stacks --stack-name item-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`RawDataBucketName`].OutputValue' --output text 2>/dev/null || echo "item-prediction-raw-data-dev-533267165065")
+PROCESSED_BUCKET=$(aws cloudformation describe-stacks --stack-name item-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`ProcessedDataBucketName`].OutputValue' --output text 2>/dev/null || echo "item-prediction-processed-data-dev-533267165065")
 
 echo "🚀 Testing Optimized Lambda Deployment with New Data"
 echo "=================================================="
@@ -151,4 +151,4 @@ echo "   The optimization infrastructure (70-80% size reduction) is working perf
 echo ""
 echo "📊 Monitor processing with:"
 echo "   aws s3 ls s3://$PROCESSED_BUCKET/ --recursive"
-echo "   aws logs tail /aws/lambda/enhanced-order-prediction-DataValidationFunction --follow"
+echo "   aws logs tail /aws/lambda/item-prediction-DataValidation --follow"

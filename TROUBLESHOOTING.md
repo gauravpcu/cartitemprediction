@@ -85,10 +85,10 @@ If you're still having issues, use this simplified deployment approach:
 ### Step 1: Clean Deployment
 ```bash
 # If you have a failed stack, delete it first
-aws cloudformation delete-stack --stack-name cart-prediction --region us-east-1
+aws cloudformation delete-stack --stack-name item-prediction --region us-east-1
 
 # Wait for deletion to complete
-aws cloudformation wait stack-delete-complete --stack-name cart-prediction --region us-east-1
+aws cloudformation wait stack-delete-complete --stack-name item-prediction --region us-east-1
 ```
 
 ### Step 2: Fresh Deployment
@@ -100,7 +100,7 @@ sam deploy --guided --resolve-s3
 
 ### Step 3: Configuration Prompts
 When prompted, use these values:
-- **Stack Name**: `cart-prediction`
+- **Stack Name**: `item-prediction`
 - **AWS Region**: `us-east-1` (or your preferred region)
 - **Parameter Environment**: `dev`
 - **Parameter BedrockModelId**: `anthropic.claude-3-sonnet-20240229-v1:0`
@@ -115,13 +115,13 @@ After deployment, verify everything is working:
 
 ### 1. Check Stack Status
 ```bash
-aws cloudformation describe-stacks --stack-name cart-prediction --region us-east-1 --query 'Stacks[0].StackStatus'
+aws cloudformation describe-stacks --stack-name item-prediction --region us-east-1 --query 'Stacks[0].StackStatus'
 ```
 Should return: `"CREATE_COMPLETE"`
 
 ### 2. Check Lambda Functions
 ```bash
-aws lambda list-functions --region us-east-1 --query 'Functions[?contains(FunctionName, `cart-prediction`)].FunctionName'
+aws lambda list-functions --region us-east-1 --query 'Functions[?contains(FunctionName, `item-prediction`)].FunctionName'
 ```
 
 ### 3. Check API Gateway
@@ -132,7 +132,7 @@ aws apigateway get-rest-apis --region us-east-1 --query 'items[?contains(name, `
 ### 4. Test API Endpoint
 ```bash
 # Get the API endpoint from stack outputs
-API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name cart-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)
+API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name item-prediction --region us-east-1 --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)
 
 # Test the endpoint
 curl "$API_ENDPOINT/predict?customerId=TEST&facilityId=TEST"
@@ -142,12 +142,12 @@ curl "$API_ENDPOINT/predict?customerId=TEST&facilityId=TEST"
 
 ### Check CloudFormation Events
 ```bash
-aws cloudformation describe-stack-events --stack-name cart-prediction --region us-east-1 --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]'
+aws cloudformation describe-stack-events --stack-name item-prediction --region us-east-1 --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]'
 ```
 
 ### Check Lambda Logs
 ```bash
-sam logs --stack-name cart-prediction --region us-east-1
+sam logs --stack-name item-prediction --region us-east-1
 ```
 
 ### Manual S3 Event Setup (If Needed)
@@ -204,7 +204,7 @@ Your deployment is successful when:
 
 2. **Monitor Processing**:
    ```bash
-   sam logs --stack-name cart-prediction --tail
+   sam logs --stack-name item-prediction --tail
    ```
 
 3. **Test APIs**:

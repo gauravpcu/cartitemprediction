@@ -49,9 +49,9 @@
     - _Requirements: 2.1, 2.2, 5.1_
 
   - [x] 5.2 Update function configurations to use layers
-    - Modify DataValidationFunction to use CoreDataScienceLayer and AWSUtilitiesLayer
-    - Update EnhancedFeatureEngineeringFunction to use all three layers
-    - Configure EnhancedPredictionsFunction with all required layers
+    - Modify DataValidation to use CoreDataScienceLayer and AWSUtilitiesLayer
+    - Update FeatureEngineering to use all three layers
+    - Configure Predictions with all required layers
     - _Requirements: 2.2, 4.1, 4.3_
 
 - [x] 6. Optimize function packages

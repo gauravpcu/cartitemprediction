@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-STACK_NAME="enhanced-order-prediction"
+STACK_NAME="item-prediction"
 REGION="us-east-1"
 
 # Colors for output
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
         --help)
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
-            echo "  --stack-name NAME    CloudFormation stack name (default: enhanced-order-prediction)"
+            echo "  --stack-name NAME    CloudFormation stack name (default: item-prediction)"
             echo "  --region REGION      AWS region (default: us-east-1)"
             echo "  --help               Show this help message"
             exit 0
@@ -150,14 +150,14 @@ echo -e "${YELLOW}⚡ Testing Lambda Functions...${NC}"
 FUNCTIONS=$(aws lambda list-functions --region $REGION --query 'Functions[].FunctionName' --output json)
 
 EXPECTED_FUNCTIONS=(
-    "EnhancedFeatureEngineeringFunction"
-    "DataValidationFunction"
-    "ForecastSetupFunction"
-    "EnhancedPredictionsFunction"
-    "PredictionAPIFunction"
-    "ProductPredictionAPIFunction"
-    "RecommendAPIFunction"
-    "FeedbackAPIFunction"
+    "FeatureEngineering"
+    "DataValidation"
+    "ForecastSetup"
+    "Predictions"
+    "PredictionAPI"
+    "ProductPredictionAPI"
+    "RecommendAPI"
+    "FeedbackAPI"
 )
 
 for func in "${EXPECTED_FUNCTIONS[@]}"; do
@@ -250,7 +250,7 @@ if echo $LOG_GROUPS | grep -q "/aws/lambda/$STACK_NAME"; then
     # Check for recent log entries (last 5 minutes)
     RECENT_LOGS=$(aws logs filter-log-events \
         --region $REGION \
-        --log-group-name "/aws/lambda/$STACK_NAME-EnhancedFeatureEngineeringFunction" \
+        --log-group-name "/aws/lambda/$STACK_NAME-FeatureEngineering" \
         --start-time $(date -d '5 minutes ago' +%s)000 \
         --query 'events[].message' \
         --output text 2>/dev/null || echo "")

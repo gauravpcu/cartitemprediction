@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The current AWS Lambda deployment is failing due to package size limitations. Several Lambda functions (DataValidationFunction, EnhancedFeatureEngineeringFunction, and EnhancedPredictionsFunction) exceed the 262MB unzipped size limit when including heavy dependencies like pandas, numpy, and scikit-learn. This feature will optimize Lambda function packaging and deployment to resolve size constraints while maintaining functionality.
+The current AWS Lambda deployment is failing due to package size limitations. Several Lambda functions (DataValidation, FeatureEngineering, and Predictions) exceed the 262MB unzipped size limit when including heavy dependencies like pandas, numpy, and scikit-learn. This feature will optimize Lambda function packaging and deployment to resolve size constraints while maintaining functionality.
 
 ## Requirements
 

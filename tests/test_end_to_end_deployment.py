@@ -104,9 +104,9 @@ class TestEndToEndDeployment(unittest.TestCase):
                 
                 # Check that functions were built
                 expected_functions = [
-                    "DataValidationFunction",
-                    "EnhancedFeatureEngineeringFunction", 
-                    "EnhancedPredictionsFunction"
+                    "DataValidation",
+                    "FeatureEngineering", 
+                    "Predictions"
                 ]
                 
                 for function in expected_functions:

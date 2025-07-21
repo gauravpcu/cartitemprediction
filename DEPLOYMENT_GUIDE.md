@@ -79,7 +79,7 @@ Expected contents:
 ```
 
 #### Available Configuration Options:
-- `--stack-name`: CloudFormation stack name (default: cart-prediction)
+- `--stack-name`: CloudFormation stack name (default: item-prediction)
 - `--region`: AWS region (default: us-east-1)
 - `--environment`: Environment tag (dev/test/prod, default: dev)
 - `--bedrock-model`: Bedrock model ID (default: anthropic.claude-3-sonnet-20240229-v1:0)
@@ -139,7 +139,7 @@ aws s3 cp sample-orders.csv s3://$RAW_BUCKET/
 
 ```bash
 # Check processing logs
-sam logs --stack-name cart-prediction --region us-east-1 --tail
+sam logs --stack-name item-prediction --region us-east-1 --tail
 
 # Check S3 for processed data
 aws s3 ls s3://order-prediction-processed-data-123456789-dev/processed/
@@ -180,7 +180,7 @@ To update configuration after deployment:
 ```bash
 # Update with new parameters
 sam deploy \
-  --stack-name cart-prediction \
+  --stack-name item-prediction \
   --parameter-overrides \
     Environment=prod \
     BedrockModelId=anthropic.claude-3-sonnet-20240229-v1:0 \
@@ -203,7 +203,7 @@ pip install --upgrade aws-sam-cli
 ```bash
 # Check stack events for specific errors
 aws cloudformation describe-stack-events \
-  --stack-name cart-prediction \
+  --stack-name item-prediction \
   --region us-east-1
 ```
 
@@ -328,11 +328,11 @@ aws forecast list-datasets --region us-east-1
 ```bash
 # Update Lambda function code
 sam build
-sam deploy --stack-name cart-prediction
+sam deploy --stack-name item-prediction
 
 # Update specific function
 aws lambda update-function-code \
-  --function-name cart-prediction-EnhancedPredictionsFunction \
+  --function-name item-prediction-Predictions \
   --zip-file fileb://new-function.zip
 ```
 
@@ -360,14 +360,14 @@ aws lambda update-function-code \
 #### Complete Rollback
 ```bash
 # Delete the entire stack
-sam delete --stack-name cart-prediction --region us-east-1
+sam delete --stack-name item-prediction --region us-east-1
 ```
 
 #### Partial Rollback
 ```bash
 # Rollback to previous version
 aws cloudformation cancel-update-stack \
-  --stack-name cart-prediction
+  --stack-name item-prediction
 ```
 
 ## ✅ Deployment Checklist

@@ -15,10 +15,10 @@ def upload_file_to_s3(file_path):
     # Get bucket name dynamically from CloudFormation
     try:
         cf_client = boto3.client('cloudformation')
-        stack_outputs = cf_client.describe_stacks(StackName='enhanced-order-prediction')['Stacks'][0]['Outputs']
+        stack_outputs = cf_client.describe_stacks(StackName='item-prediction')['Stacks'][0]['Outputs']
         bucket_name = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'RawDataBucketName')
     except:
-        bucket_name = 'cart-prediction-rawdatabucket-6qnhmltcw42k'  # Fallback
+        bucket_name = 'item-prediction-raw-data-dev-533267165065'  # Fallback
     
     if not os.path.exists(file_path):
         print(f"❌ File not found: {file_path}")

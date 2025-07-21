@@ -53,6 +53,8 @@ Resources:
   RawDataBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName:
+        Fn::Sub: item-prediction-raw-data-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -63,6 +65,8 @@ Resources:
   ProcessedDataBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName:
+        Fn::Sub: item-prediction-processed-data-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -73,18 +77,22 @@ Resources:
   ModelArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName:
+        Fn::Sub: item-prediction-model-artifacts-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
   ResultsBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName:
+        Fn::Sub: item-prediction-results-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
   FeedbackTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub: OrderPredictionFeedback-${Environment}
+        Fn::Sub: item-prediction-feedback-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: id
@@ -96,7 +104,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub: OrderPredictionProductLookup-${Environment}
+        Fn::Sub: item-prediction-product-lookup-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: product_id
@@ -117,7 +125,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub: OrderPredictionCache-${Environment}
+        Fn::Sub: item-prediction-cache-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: cache_key
@@ -181,8 +189,8 @@ Resources:
             - ssm:GetParameters
             - ssm:DeleteParameter
             Resource:
-              Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OrderPrediction/*
-  OrderPredictionApi:
+              Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/item-prediction/*
+  ItemPredictionApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
@@ -191,17 +199,19 @@ Resources:
         AllowMethods: '''GET,POST,OPTIONS'''
         AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
         AllowOrigin: '''*'''
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: EnhancedFeatureEngineeringFunction
+      FunctionName:
+        Fn::Sub: feature-engineering-${Environment}
+      CodeUri: FeatureEngineering
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
         - LambdaExecutionRole
         - Arn
-      Timeout: 300
-      MemorySize: 1024
+      Timeout: 900
+      MemorySize: 3008
       Runtime: python3.9
       Environment:
         Variables:
@@ -219,11 +229,13 @@ Resources:
               Ref: RawDataBucket
             Events: s3:ObjectCreated:*
     Metadata:
-      SamResourceId: EnhancedFeatureEngineeringFunction
-  DataValidationFunction:
+      SamResourceId: FeatureEngineering
+  DataValidation:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: DataValidationFunction
+      FunctionName:
+        Fn::Sub: data-validation-${Environment}
+      CodeUri: DataValidation
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -235,11 +247,13 @@ Resources:
           PROCESSED_BUCKET:
             Ref: ProcessedDataBucket
     Metadata:
-      SamResourceId: DataValidationFunction
-  EnhancedPredictionsFunction:
+      SamResourceId: DataValidation
+  Predictions:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: EnhancedPredictionsFunction
+      FunctionName:
+        Fn::Sub: predictions-${Environment}
+      CodeUri: Predictions
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -263,12 +277,14 @@ Resources:
           SAGEMAKER_ENDPOINT_NAME:
             Ref: SageMakerEndpointName
     Metadata:
-      SamResourceId: EnhancedPredictionsFunction
-  PredictionAPIFunction:
+      SamResourceId: Predictions
+  PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName:
+        Fn::Sub: prediction-api-${Environment}
       Description: API function for handling order predictions.
-      CodeUri: PredictionAPIFunction
+      CodeUri: PredictionAPI
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -278,21 +294,23 @@ Resources:
       Environment:
         Variables:
           ENHANCE_FUNCTION_NAME:
-            Ref: EnhancedPredictionsFunction
+            Ref: Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
             RestApiId:
-              Ref: OrderPredictionApi
+              Ref: ItemPredictionApi
             Path: /predict
             Method: get
     Metadata:
-      SamResourceId: PredictionAPIFunction
-  ProductPredictionAPIFunction:
+      SamResourceId: PredictionAPI
+  ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ProductPredictionAPIFunction
+      FunctionName:
+        Fn::Sub: product-prediction-api-${Environment}
+      CodeUri: ProductPredictionAPI
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -302,21 +320,23 @@ Resources:
       Environment:
         Variables:
           ENHANCE_FUNCTION_NAME:
-            Ref: EnhancedPredictionsFunction
+            Ref: Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
             RestApiId:
-              Ref: OrderPredictionApi
+              Ref: ItemPredictionApi
             Path: /predict/products
             Method: get
     Metadata:
-      SamResourceId: ProductPredictionAPIFunction
-  RecommendAPIFunction:
+      SamResourceId: ProductPredictionAPI
+  RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: RecommendAPIFunction
+      FunctionName:
+        Fn::Sub: recommend-api-${Environment}
+      CodeUri: RecommendAPI
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -326,21 +346,23 @@ Resources:
       Environment:
         Variables:
           ENHANCE_FUNCTION_NAME:
-            Ref: EnhancedPredictionsFunction
+            Ref: Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
             RestApiId:
-              Ref: OrderPredictionApi
+              Ref: ItemPredictionApi
             Path: /recommend
             Method: get
     Metadata:
-      SamResourceId: RecommendAPIFunction
-  FeedbackAPIFunction:
+      SamResourceId: RecommendAPI
+  FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: FeedbackAPIFunction
+      FunctionName:
+        Fn::Sub: feedback-api-${Environment}
+      CodeUri: FeedbackAPI
       Handler: app.lambda_handler
       Role:
         Fn::GetAtt:
@@ -356,11 +378,11 @@ Resources:
           Type: Api
           Properties:
             RestApiId:
-              Ref: OrderPredictionApi
+              Ref: ItemPredictionApi
             Path: /feedback
             Method: post
     Metadata:
-      SamResourceId: FeedbackAPIFunction
+      SamResourceId: FeedbackAPI
   FeatureEngineeringErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -375,7 +397,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value:
-          Ref: EnhancedFeatureEngineeringFunction
+          Ref: FeatureEngineering
   PredictionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -390,19 +412,19 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value:
-          Ref: EnhancedPredictionsFunction
+          Ref: Predictions
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
     Value:
-      Fn::Sub: https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+      Fn::Sub: https://${ItemPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-ApiEndpoint
   ProductPredictionEndpoint:
     Description: Product-level prediction endpoint
     Value:
-      Fn::Sub: https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/products
+      Fn::Sub: https://${ItemPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/products
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-ProductPredictionEndpoint

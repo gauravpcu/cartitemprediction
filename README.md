@@ -40,17 +40,17 @@ A comprehensive AWS-based solution for predicting customer orders using Amazon F
 
 ```mermaid
 graph TD
-    A[Raw CSV Upload to S3] --> B[EnhancedFeatureEngineeringFunction]
+    A[Raw CSV Upload to S3] --> B[FeatureEngineering]
     B --> C[Processed Data in S3]
-    C --> D[DataValidationFunction - Manual]
+    C --> D[DataValidation - Manual]
     
     E[API Request] --> F{API Endpoint}
-    F -->|/predict| G[PredictionAPIFunction]
-    F -->|/predict/products| H[ProductPredictionAPIFunction] 
-    F -->|/recommend| I[RecommendAPIFunction]
-    F -->|/feedback| J[FeedbackAPIFunction]
+    F -->|/predict| G[PredictionAPI]
+    F -->|/predict/products| H[ProductPredictionAPI] 
+    F -->|/recommend| I[RecommendAPI]
+    F -->|/feedback| J[FeedbackAPI]
     
-    G --> K[EnhancedPredictionsFunction]
+    G --> K[Predictions]
     H --> K
     I --> K
     
@@ -66,7 +66,7 @@ graph TD
 ### Function Responsibilities
 
 #### 🔄 **Data Processing Functions**
-1. **EnhancedFeatureEngineeringFunction** (Triggered by S3)
+1. **FeatureEngineering** (Triggered by S3)
    - Processes raw CSV files uploaded to S3
    - Creates temporal features (day of week, seasonality, trends)
    - Generates product demand patterns and statistics
@@ -75,7 +75,7 @@ graph TD
    - Saves processed data, lookups, and forecast-ready data to S3
    - Updates DynamoDB with product catalog information
 
-2. **DataValidationFunction** (Manual invoke only)
+2. **DataValidation** (Manual invoke only)
    - Validates processed data quality and completeness
    - Generates comprehensive data profiling reports
    - Performs business rule validation
@@ -83,7 +83,7 @@ graph TD
    - Currently not auto-triggered (requires manual invocation)
 
 #### 🤖 **ML & Prediction Functions**
-3. **EnhancedPredictionsFunction** (Called by API functions)
+3. **Predictions** (Called by API functions)
    - Core prediction engine using pre-trained SageMaker DeepAR model
    - Integrates with Amazon Bedrock for AI-powered insights
    - Queries DynamoDB for product and customer data
@@ -92,25 +92,25 @@ graph TD
    - Returns structured prediction data to API functions
 
 #### 🌐 **API Functions** (Triggered by API Gateway)
-4. **PredictionAPIFunction** (`GET /predict`)
+4. **PredictionAPI** (`GET /predict`)
    - Handles basic prediction requests
    - Validates customer and facility parameters
-   - Calls EnhancedPredictionsFunction for ML predictions
+   - Calls Predictions for ML predictions
    - Returns aggregate order predictions with confidence intervals
 
-5. **ProductPredictionAPIFunction** (`GET /predict/products`)
+5. **ProductPredictionAPI** (`GET /predict/products`)
    - Handles product-level prediction requests
    - Supports filtering by specific products or categories
    - Returns detailed product-by-product forecasts
    - Includes product metadata and demand patterns
 
-6. **RecommendAPIFunction** (`GET /recommend`)
+6. **RecommendAPI** (`GET /recommend`)
    - Provides AI-powered product recommendations
    - Supports different recommendation types (reorder, new products, seasonal)
    - Uses Bedrock for intelligent recommendation reasoning
    - Returns prioritized product suggestions with explanations
 
-7. **FeedbackAPIFunction** (`POST /feedback`)
+7. **FeedbackAPI** (`POST /feedback`)
    - Collects user feedback on prediction accuracy
    - Stores feedback in DynamoDB for model improvement
    - Supports various feedback types (accuracy, usefulness, etc.)
@@ -139,23 +139,23 @@ graph TD
 
 ## 🔧 Lambda Functions in This Stack
 
-### Current Deployed Functions (Stack: enhanced-order-prediction)
+### Current Deployed Functions (Stack: item-prediction)
 
 | # | Logical Name | Physical Function Name | Purpose | Trigger |
 |---|--------------|------------------------|---------|---------|
-| 1 | **EnhancedFeatureEngineeringFunction** | `enhanced-order-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W` | Main data processing, feature engineering, creates lookups | S3 raw data upload |
-| 2 | **DataValidationFunction** | `enhanced-order-prediction-DataValidationFunction-ydgv0ZZYdYsi` | Data quality validation and checks | Manual invoke only |
-| 3 | **EnhancedPredictionsFunction** | `enhanced-order-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2` | ML predictions using SageMaker and Bedrock | Called by API functions |
-| 4 | **PredictionAPIFunction** | `enhanced-order-prediction-PredictionAPIFunction-a10hQXzs0KCe` | REST API for basic predictions | API Gateway `/predict` |
-| 5 | **ProductPredictionAPIFunction** | `enhanced-order-prediction-ProductPredictionAPIFunc-O1nr9guw7tQp` | REST API for product-level predictions | API Gateway `/predict/products` |
-| 6 | **RecommendAPIFunction** | `enhanced-order-prediction-RecommendAPIFunction-gPsT373hi2KQ` | REST API for AI recommendations | API Gateway `/recommend` |
-| 7 | **FeedbackAPIFunction** | `enhanced-order-prediction-FeedbackAPIFunction-fQMYWHwfPHhs` | REST API for feedback collection | API Gateway `/feedback` |
+| 1 | **FeatureEngineering** | `item-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W` | Main data processing, feature engineering, creates lookups | S3 raw data upload |
+| 2 | **DataValidation** | `item-prediction-DataValidation-ydgv0ZZYdYsi` | Data quality validation and checks | Manual invoke only |
+| 3 | **Predictions** | `item-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2` | ML predictions using SageMaker and Bedrock | Called by API functions |
+| 4 | **PredictionAPI** | `item-prediction-PredictionAPI-a10hQXzs0KCe` | REST API for basic predictions | API Gateway `/predict` |
+| 5 | **ProductPredictionAPI** | `item-prediction-ProductPredictionAPIFunc-O1nr9guw7tQp` | REST API for product-level predictions | API Gateway `/predict/products` |
+| 6 | **RecommendAPI** | `item-prediction-RecommendAPI-gPsT373hi2KQ` | REST API for AI recommendations | API Gateway `/recommend` |
+| 7 | **FeedbackAPI** | `item-prediction-FeedbackAPI-fQMYWHwfPHhs` | REST API for feedback collection | API Gateway `/feedback` |
 
 ### ⚠️ Naming Inconsistency Notice
 **Important**: There are naming inconsistencies in the codebase:
-- **CloudFormation Stack**: `enhanced-order-prediction` (actual deployed name)
-- **Some scripts reference**: `cart-prediction` (outdated references)
-- **Bucket names contain**: `cart-prediction` (from previous deployments)
+- **CloudFormation Stack**: `item-prediction` (actual deployed name)
+- **Some scripts reference**: `item-prediction` (outdated references)
+- **Bucket names contain**: `item-prediction` (from previous deployments)
 
 ## 📋 Prerequisites
 
@@ -180,17 +180,17 @@ graph TD
 ### 1. Clone and Deploy
 
 ```bash
-# Deploy with default settings (creates enhanced-order-prediction stack)
+# Deploy with default settings (creates item-prediction stack)
 ./deploy.sh
 
 # Or deploy with custom settings
-./deploy.sh --stack-name enhanced-order-prediction \
+./deploy.sh --stack-name item-prediction \
            --region us-east-1 \
            --environment prod \
            --bedrock-model anthropic.claude-3-sonnet-20240229-v1:0
 
-# Note: Current deployment uses stack name "enhanced-order-prediction"
-# Some legacy scripts may reference "cart-prediction" - update as needed
+# Note: Current deployment uses stack name "item-prediction"
+# Some legacy scripts may reference "item-prediction" - update as needed
 ```
 
 ### 2. Upload Sample Data
@@ -226,8 +226,8 @@ curl -X POST "$API_ENDPOINT/feedback" \
 | Resource Type | Name | Purpose |
 |---------------|------|---------|
 | **API Gateway** | `https://g08inrsas0.execute-api.us-east-1.amazonaws.com/Prod/` | Main API endpoint |
-| **S3 Raw Data** | `enhanced-order-prediction-rawdatabucket-sankmq5hrvsu` | Upload CSV files here |
-| **S3 Processed** | `enhanced-order-prediction-processeddatabucket-3sdqfh2qnotf` | Processed data output |
+| **S3 Raw Data** | `item-prediction-rawdatabucket-sankmq5hrvsu` | Upload CSV files here |
+| **S3 Processed** | `item-prediction-processeddatabucket-3sdqfh2qnotf` | Processed data output |
 | **DynamoDB Product Lookup** | `OrderPredictionProductLookup-dev` | Product catalog |
 | **DynamoDB Cache** | `OrderPredictionCache-dev` | Prediction caching |
 
@@ -411,30 +411,30 @@ To implement automated model retraining, you would need to add:
 
 ### Naming Inconsistency Resolution
 
-The codebase has mixed references between `cart-prediction` and `enhanced-order-prediction`. Here's how to fix:
+The codebase has mixed references between `item-prediction` and `item-prediction`. Here's how to fix:
 
 #### Current State:
-- **Actual Stack Name**: `enhanced-order-prediction`
-- **Actual Function Names**: `enhanced-order-prediction-*`
-- **Legacy References**: Many scripts still reference `cart-prediction`
+- **Actual Stack Name**: `item-prediction`
+- **Actual Function Names**: `item-prediction-*`
+- **Legacy References**: Many scripts still reference `item-prediction`
 
 #### Files That Need Updates:
 1. **upload_new_file.sh** - Update bucket names and function references
-2. **deploy.sh** - Default stack name should be `enhanced-order-prediction`
+2. **deploy.sh** - Default stack name should be `item-prediction`
 3. **Various test scripts** - Update stack and function name references
 4. **Documentation** - Update all command examples
 
 #### Quick Fix Commands:
 ```bash
 # Update bucket names in upload script
-sed -i 's/cart-prediction/enhanced-order-prediction/g' upload_new_file.sh
+sed -i 's/item-prediction/item-prediction/g' upload_new_file.sh
 
 # Update deploy script default
-sed -i 's/STACK_NAME="cart-prediction"/STACK_NAME="enhanced-order-prediction"/g' deploy.sh
+sed -i 's/STACK_NAME="item-prediction"/STACK_NAME="item-prediction"/g' deploy.sh
 
 # Update test scripts
-find . -name "*.sh" -exec sed -i 's/cart-prediction/enhanced-order-prediction/g' {} \;
-find . -name "*.py" -exec sed -i 's/cart-prediction/enhanced-order-prediction/g' {} \;
+find . -name "*.sh" -exec sed -i 's/item-prediction/item-prediction/g' {} \;
+find . -name "*.py" -exec sed -i 's/item-prediction/item-prediction/g' {} \;
 ```
 
 ## 🔍 Monitoring and Troubleshooting
@@ -445,12 +445,12 @@ Monitor the solution using CloudWatch logs:
 
 ```bash
 # View all logs (use correct stack name)
-sam logs --stack-name enhanced-order-prediction --region us-east-1
+sam logs --stack-name item-prediction --region us-east-1
 
 # View specific function logs (use actual function names)
-aws logs tail /aws/lambda/enhanced-order-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W --follow
-aws logs tail /aws/lambda/enhanced-order-prediction-DataValidationFunction-ydgv0ZZYdYsi --follow
-aws logs tail /aws/lambda/enhanced-order-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2 --follow
+aws logs tail /aws/lambda/item-prediction-EnhancedFeatureEngineeri-ESNfjtI1CW1W --follow
+aws logs tail /aws/lambda/item-prediction-DataValidation-ydgv0ZZYdYsi --follow
+aws logs tail /aws/lambda/item-prediction-EnhancedPredictionsFunct-o8M2QC3E25P2 --follow
 ```
 
 ### CloudWatch Alarms

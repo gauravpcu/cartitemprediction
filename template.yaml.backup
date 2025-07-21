@@ -208,7 +208,7 @@ Resources:
   # Lambda Functions
   # Using AWS-managed layers for better compatibility and performance
 
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_feature_engineering/
@@ -229,7 +229,7 @@ Resources:
             Bucket: !Ref RawDataBucket
             Events: s3:ObjectCreated:*
 
-  DataValidationFunction:
+  DataValidation:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/data_validation/
@@ -240,7 +240,7 @@ Resources:
         Variables:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
 
-  EnhancedPredictionsFunction:
+  Predictions:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_predictions/
@@ -258,7 +258,7 @@ Resources:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
           SAGEMAKER_ENDPOINT_NAME: !Ref SageMakerEndpointName
 
-  PredictionAPIFunction:
+  PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       Description: API function for handling order predictions.
@@ -268,7 +268,7 @@ Resources:
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -278,7 +278,7 @@ Resources:
             Method: get
 
   # New: Product-Level Prediction API
-  ProductPredictionAPIFunction:
+  ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/product_prediction_api/
@@ -287,7 +287,7 @@ Resources:
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -296,7 +296,7 @@ Resources:
             Path: /predict/products
             Method: get
 
-  RecommendAPIFunction:
+  RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/recommend_api/
@@ -305,7 +305,7 @@ Resources:
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -314,7 +314,7 @@ Resources:
             Path: /recommend
             Method: get
 
-  FeedbackAPIFunction:
+  FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/feedback_api/
@@ -346,7 +346,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedFeatureEngineeringFunction
+          Value: !Ref FeatureEngineering
 
   PredictionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -361,7 +361,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedPredictionsFunction
+          Value: !Ref Predictions
 
 Outputs:
   ApiEndpoint:

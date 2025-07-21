@@ -200,7 +200,7 @@ Resources:
         AllowOrigin: "'*'"
 
   # Lambda Functions
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_feature_engineering/
@@ -220,12 +220,12 @@ Resources:
   FeatureEngineeringS3Permission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref EnhancedFeatureEngineeringFunction
+      FunctionName: !Ref FeatureEngineering
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
       SourceArn: !Sub '${RawDataBucket}/*'
 
-  DataValidationFunction:
+  DataValidation:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/data_validation/
@@ -241,12 +241,12 @@ Resources:
   DataValidationS3Permission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref DataValidationFunction
+      FunctionName: !Ref DataValidation
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
       SourceArn: !Sub '${ProcessedDataBucket}/*'
 
-  ForecastSetupFunction:
+  ForecastSetup:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/forecast_setup/
@@ -259,7 +259,7 @@ Resources:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
           ENABLE_PRODUCT_FORECASTING: !Ref EnableProductLevelForecasting
 
-  EnhancedPredictionsFunction:
+  Predictions:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_predictions/
@@ -275,7 +275,7 @@ Resources:
           PREDICTION_CACHE_TABLE: !Ref PredictionCacheTable
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
 
-  PredictionAPIFunction:
+  PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/prediction_api/
@@ -283,7 +283,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -293,7 +293,7 @@ Resources:
             Method: get
 
   # New: Product-Level Prediction API
-  ProductPredictionAPIFunction:
+  ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/product_prediction_api/
@@ -301,7 +301,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -310,7 +310,7 @@ Resources:
             Path: /predict/products
             Method: get
 
-  RecommendAPIFunction:
+  RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/recommend_api/
@@ -318,7 +318,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
@@ -327,7 +327,7 @@ Resources:
             Path: /recommend
             Method: get
 
-  FeedbackAPIFunction:
+  FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/feedback_api/
@@ -360,8 +360,8 @@ Resources:
       ServiceToken: !GetAtt S3BucketNotificationLambdaFunction.Arn
       RawDataBucket: !Ref RawDataBucket
       ProcessedDataBucket: !Ref ProcessedDataBucket
-      FeatureEngineeringFunction: !Ref EnhancedFeatureEngineeringFunction
-      DataValidationFunction: !Ref DataValidationFunction
+      FeatureEngineeringFunction: !Ref FeatureEngineering
+      DataValidation: !Ref DataValidation
 
   # CloudWatch Alarms for monitoring
   FeatureEngineeringErrorAlarm:
@@ -377,7 +377,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedFeatureEngineeringFunction
+          Value: !Ref FeatureEngineering
 
   PredictionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -392,7 +392,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedPredictionsFunction
+          Value: !Ref Predictions
 
 Outputs:
   ApiEndpoint:

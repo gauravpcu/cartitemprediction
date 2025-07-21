@@ -19,12 +19,12 @@ class RealDataTester:
         # Get bucket names dynamically from CloudFormation
         try:
             cf_client = boto3.client('cloudformation')
-            stack_outputs = cf_client.describe_stacks(StackName='enhanced-order-prediction')['Stacks'][0]['Outputs']
+            stack_outputs = cf_client.describe_stacks(StackName='item-prediction')['Stacks'][0]['Outputs']
             self.raw_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'RawDataBucketName')
             self.processed_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'ProcessedDataBucketName')
         except:
-            self.raw_bucket = 'cart-prediction-rawdatabucket-6qnhmltcw42k'
-            self.processed_bucket = 'cart-prediction-processeddatabucket-btkiig614wgu'
+            self.raw_bucket = 'item-prediction-raw-data-dev-533267165065'
+            self.processed_bucket = 'item-prediction-processed-data-dev-533267165065'
         self.api_endpoint = 'https://xtuj41n2mk.execute-api.us-east-1.amazonaws.com/Prod'
         
     def validate_data_format(self, file_path):

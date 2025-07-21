@@ -58,6 +58,7 @@ Resources:
   RawDataBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Sub item-prediction-raw-data-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -69,6 +70,7 @@ Resources:
   ProcessedDataBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Sub item-prediction-processed-data-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -80,12 +82,14 @@ Resources:
   ModelArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Sub item-prediction-model-artifacts-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
 
   ResultsBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Sub item-prediction-results-${Environment}-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
 
@@ -93,7 +97,7 @@ Resources:
   FeedbackTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub OrderPredictionFeedback-${Environment}
+      TableName: !Sub item-prediction-feedback-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: id
@@ -106,7 +110,7 @@ Resources:
   ProductLookupTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub OrderPredictionProductLookup-${Environment}
+      TableName: !Sub item-prediction-product-lookup-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: product_id
@@ -128,7 +132,7 @@ Resources:
   PredictionCacheTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub OrderPredictionCache-${Environment}
+      TableName: !Sub item-prediction-cache-${Environment}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: cache_key
@@ -192,10 +196,10 @@ Resources:
                   - ssm:GetParameter
                   - ssm:GetParameters
                   - ssm:DeleteParameter
-                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OrderPrediction/*'
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/item-prediction/*'
 
   # API Gateway
-  OrderPredictionApi:
+  ItemPredictionApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
@@ -208,14 +212,15 @@ Resources:
   # Lambda Functions
   # Using AWS-managed layers for better compatibility and performance
 
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "feature-engineering-${Environment}"
       CodeUri: functions/enhanced_feature_engineering/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
-      Timeout: 300  # 5 minutes for processing large datasets
-      MemorySize: 1024
+      Timeout: 900  # 15 minutes for processing large datasets
+      MemorySize: 3008  # Maximum Lambda memory for better performance
       Runtime: python3.9
       Environment:
         Variables:
@@ -229,9 +234,10 @@ Resources:
             Bucket: !Ref RawDataBucket
             Events: s3:ObjectCreated:*
 
-  DataValidationFunction:
+  DataValidation:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "data-validation-${Environment}"
       CodeUri: functions/data_validation/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -240,9 +246,10 @@ Resources:
         Variables:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
 
-  EnhancedPredictionsFunction:
+  Predictions:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "predictions-${Environment}"
       CodeUri: functions/enhanced_predictions/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -258,9 +265,10 @@ Resources:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
           SAGEMAKER_ENDPOINT_NAME: !Ref SageMakerEndpointName
 
-  PredictionAPIFunction:
+  PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "prediction-api-${Environment}"
       Description: API function for handling order predictions.
       CodeUri: functions/prediction_api/
       Handler: app.lambda_handler
@@ -268,55 +276,58 @@ Resources:
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref OrderPredictionApi
+            RestApiId: !Ref ItemPredictionApi
             Path: /predict
             Method: get
 
   # New: Product-Level Prediction API
-  ProductPredictionAPIFunction:
+  ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "product-prediction-api-${Environment}"
       CodeUri: functions/product_prediction_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref OrderPredictionApi
+            RestApiId: !Ref ItemPredictionApi
             Path: /predict/products
             Method: get
 
-  RecommendAPIFunction:
+  RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "recommend-api-${Environment}"
       CodeUri: functions/recommend_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.9
       Environment:
         Variables:
-          ENHANCE_FUNCTION_NAME: !Ref EnhancedPredictionsFunction
+          ENHANCE_FUNCTION_NAME: !Ref Predictions
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref OrderPredictionApi
+            RestApiId: !Ref ItemPredictionApi
             Path: /recommend
             Method: get
 
-  FeedbackAPIFunction:
+  FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "feedback-api-${Environment}"
       CodeUri: functions/feedback_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -328,7 +339,7 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref OrderPredictionApi
+            RestApiId: !Ref ItemPredictionApi
             Path: /feedback
             Method: post
 
@@ -346,7 +357,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedFeatureEngineeringFunction
+          Value: !Ref FeatureEngineering
 
   PredictionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -361,18 +372,18 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref EnhancedPredictionsFunction
+          Value: !Ref Predictions
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+    Value: !Sub https://${ItemPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
     Export:
       Name: !Sub ${AWS::StackName}-ApiEndpoint
   
   ProductPredictionEndpoint:
     Description: Product-level prediction endpoint
-    Value: !Sub https://${OrderPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/products
+    Value: !Sub https://${ItemPredictionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/products
     Export:
       Name: !Sub ${AWS::StackName}-ProductPredictionEndpoint
   

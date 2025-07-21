@@ -6,7 +6,7 @@ This guide provides comprehensive documentation for the optimized Lambda deploym
 
 ## 🎯 Problem Statement
 
-The original deployment was failing due to Lambda functions exceeding the 262MB unzipped size limit. Functions like `DataValidationFunction`, `EnhancedFeatureEngineeringFunction`, and `EnhancedPredictionsFunction` were including heavy dependencies (pandas ~50MB, numpy ~30MB, scikit-learn ~80MB) in each package, resulting in ~160MB+ overhead per function.
+The original deployment was failing due to Lambda functions exceeding the 262MB unzipped size limit. Functions like `DataValidation`, `FeatureEngineering`, and `Predictions` were including heavy dependencies (pandas ~50MB, numpy ~30MB, scikit-learn ~80MB) in each package, resulting in ~160MB+ overhead per function.
 
 ## 🏗️ Solution Architecture
 
@@ -36,7 +36,7 @@ The original deployment was failing due to Lambda functions exceeding the 262MB 
 
 | Component | Before | After | Savings |
 |-----------|--------|-------|---------|
-| DataValidationFunction | 180MB+ | 45MB | 75% |
+| DataValidation | 180MB+ | 45MB | 75% |
 | EnhancedFeatureEngineering | 220MB+ | 48MB | 78% |
 | EnhancedPredictions | 210MB+ | 47MB | 78% |
 | **Total Deployment** | 610MB+ | 140MB | **77%** |
@@ -93,7 +93,7 @@ cd your-project-directory
 ./deploy.sh
 
 # Monitor deployment
-sam logs --stack-name cart-prediction --tail
+sam logs --stack-name item-prediction --tail
 ```
 
 ### 2. Custom Configuration Deployment
@@ -372,7 +372,7 @@ git tag -a v2.0.0 -m "Optimized deployment with layers"
 ./deploy.sh --enable-rollback
 
 # Rollback if needed
-sam delete --stack-name cart-prediction-backup-20250718
+sam delete --stack-name item-prediction-backup-20250718
 ```
 
 ## 🚨 Troubleshooting
@@ -440,7 +440,7 @@ ls -la layers/*/python/
 python3 scripts/size-validation.py validate --target functions
 
 # Monitor deployment
-sam logs --stack-name cart-prediction --tail --filter ERROR
+sam logs --stack-name item-prediction --tail --filter ERROR
 ```
 
 ## 📊 Monitoring and Alerting

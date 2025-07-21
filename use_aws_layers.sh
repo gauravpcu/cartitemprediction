@@ -47,7 +47,7 @@ Globals:
 
 Resources:
   # Use AWS-provided layers instead of custom ones
-  DataValidationFunction:
+  DataValidation:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/data_validation/
@@ -59,7 +59,7 @@ Resources:
           RAW_BUCKET: !Ref RawDataBucket
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
 
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_feature_engineering/
@@ -74,7 +74,7 @@ Resources:
           PROCESSED_BUCKET: !Ref ProcessedDataBucket
           PRODUCT_LOOKUP_TABLE: !Ref ProductLookupTable
 
-  EnhancedPredictionsFunction:
+  Predictions:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/enhanced_predictions/
@@ -90,7 +90,7 @@ Resources:
           PREDICTION_CACHE_TABLE: !Ref PredictionCacheTable
 
   # Keep the working API functions as they are
-  PredictionAPIFunction:
+  PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/prediction_api/
@@ -103,7 +103,7 @@ Resources:
             Path: /predict
             Method: get
 
-  ProductPredictionAPIFunction:
+  ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/product_prediction_api/
@@ -116,7 +116,7 @@ Resources:
             Path: /predict/products
             Method: get
 
-  RecommendAPIFunction:
+  RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/recommend_api/
@@ -129,7 +129,7 @@ Resources:
             Path: /recommend
             Method: get
 
-  FeedbackAPIFunction:
+  FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/feedback_api/
@@ -146,7 +146,7 @@ Resources:
   RawDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'cart-prediction-rawdatabucket-${AWS::AccountId}-${Environment}'
+      BucketName: !Sub 'item-prediction-rawdatabucket-${AWS::AccountId}-${Environment}'
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -158,7 +158,7 @@ Resources:
   ProcessedDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'cart-prediction-processeddatabucket-${AWS::AccountId}-${Environment}'
+      BucketName: !Sub 'item-prediction-processeddatabucket-${AWS::AccountId}-${Environment}'
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -233,7 +233,7 @@ echo "✅ Created template with AWS-provided layers"
 echo ""
 echo "🚀 Deploy the updated template:"
 echo "   sam build -t template_aws_layers.yaml"
-echo "   sam deploy --template-file .aws-sam/build/template.yaml --stack-name cart-prediction --region us-east-1 --capabilities CAPABILITY_IAM --resolve-s3"
+echo "   sam deploy --template-file .aws-sam/build/template.yaml --stack-name item-prediction --region us-east-1 --capabilities CAPABILITY_IAM --resolve-s3"
 echo ""
 echo "💡 This uses AWS-managed layers that are:"
 echo "   ✅ Pre-built for Linux Lambda environment"

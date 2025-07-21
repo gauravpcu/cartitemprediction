@@ -21,14 +21,14 @@ def test_aws_resources():
         # Get bucket names dynamically from CloudFormation
         try:
             cf_client = boto3.client('cloudformation')
-            stack_outputs = cf_client.describe_stacks(StackName='enhanced-order-prediction')['Stacks'][0]['Outputs']
+            stack_outputs = cf_client.describe_stacks(StackName='item-prediction')['Stacks'][0]['Outputs']
             raw_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'RawDataBucketName')
             processed_bucket = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'ProcessedDataBucketName')
             buckets = [raw_bucket, processed_bucket]
         except:
             buckets = [
-                'cart-prediction-rawdatabucket-6qnhmltcw42k',
-                'cart-prediction-processeddatabucket-btkiig614wgu'
+                'item-prediction-raw-data-dev-533267165065',
+                'item-prediction-processed-data-dev-533267165065'
             ]
         
         for bucket in buckets:
@@ -68,7 +68,7 @@ def test_aws_resources():
         
         # List functions with our stack prefix
         response = lambda_client.list_functions()
-        our_functions = [f for f in response['Functions'] if 'enhanced-order-prediction' in f['FunctionName']]
+        our_functions = [f for f in response['Functions'] if 'item-prediction' in f['FunctionName']]
         
         print(f"Found {len(our_functions)} Lambda functions:")
         for func in our_functions:
@@ -86,7 +86,7 @@ def test_aws_resources():
         
         # List REST APIs
         response = apigateway.get_rest_apis()
-        our_apis = [api for api in response['items'] if 'order-prediction' in api.get('name', '').lower()]
+        our_apis = [api for api in response['items'] if 'item-prediction' in api.get('name', '').lower()]
         
         for api in our_apis:
             print(f"✅ API: {api['name']} (ID: {api['id']})")
@@ -132,10 +132,10 @@ def upload_sample_data():
     # Get bucket name dynamically
     try:
         cf_client = boto3.client('cloudformation')
-        stack_outputs = cf_client.describe_stacks(StackName='enhanced-order-prediction')['Stacks'][0]['Outputs']
+        stack_outputs = cf_client.describe_stacks(StackName='item-prediction')['Stacks'][0]['Outputs']
         bucket_name = next(o['OutputValue'] for o in stack_outputs if o['OutputKey'] == 'RawDataBucketName')
     except:
-        bucket_name = 'cart-prediction-rawdatabucket-6qnhmltcw42k'
+        bucket_name = 'item-prediction-raw-data-dev-533267165065'
     
     try:
         s3_client = boto3.client('s3')

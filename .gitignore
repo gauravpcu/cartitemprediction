@@ -47,3 +47,10 @@ jspm_packages/
 .vscode/
 *.swp
 *.swo
+
+# Large data files
+*.csv
+hybrent-0719.csv
+data/
+reports/*.json
+reports/*.txt

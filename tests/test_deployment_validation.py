@@ -221,9 +221,9 @@ class TestDeploymentValidation(unittest.TestCase):
             
             # Expected function to layer mappings
             function_layer_mappings = {
-                'DataValidationFunction': ['CoreDataScienceLayer', 'AWSUtilitiesLayer'],
-                'EnhancedFeatureEngineeringFunction': ['CoreDataScienceLayer', 'MLLibrariesLayer', 'AWSUtilitiesLayer'],
-                'EnhancedPredictionsFunction': ['CoreDataScienceLayer', 'MLLibrariesLayer', 'AWSUtilitiesLayer']
+                'DataValidation': ['CoreDataScienceLayer', 'AWSUtilitiesLayer'],
+                'FeatureEngineering': ['CoreDataScienceLayer', 'MLLibrariesLayer', 'AWSUtilitiesLayer'],
+                'Predictions': ['CoreDataScienceLayer', 'MLLibrariesLayer', 'AWSUtilitiesLayer']
             }
             
             for function_name, expected_layers in function_layer_mappings.items():

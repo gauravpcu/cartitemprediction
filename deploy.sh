@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-STACK_NAME="enhanced-order-prediction"
+STACK_NAME="item-prediction"
 REGION="us-east-1"
 ENVIRONMENT="dev"
 BEDROCK_MODEL="anthropic.claude-3-sonnet-20240229-v1:0"
@@ -77,7 +77,7 @@ Enhanced Order Prediction Solution Deployment Script
 Usage: $0 [OPTIONS]
 
 Configuration Options:
-  --stack-name NAME              CloudFormation stack name (default: enhanced-order-prediction)
+  --stack-name NAME              CloudFormation stack name (default: item-prediction)
   --region REGION                AWS region (default: us-east-1)
   --environment ENV              Environment (dev/test/prod, default: dev)
   --bedrock-model MODEL          Bedrock model ID (default: $BEDROCK_MODEL)

@@ -7,7 +7,7 @@ This design addresses the Lambda function package size limitations by implementi
 ## Architecture
 
 ### Current State Analysis
-- **Problem Functions**: DataValidationFunction, EnhancedFeatureEngineeringFunction, EnhancedPredictionsFunction
+- **Problem Functions**: DataValidation, FeatureEngineering, Predictions
 - **Root Cause**: Each function packages identical heavy dependencies (pandas ~50MB, numpy ~30MB, scikit-learn ~80MB)
 - **Combined Overhead**: ~160MB+ per function before application code
 - **Template Issue**: PandasNumpyLayer is defined but not used by all functions
@@ -133,20 +133,20 @@ Layers:
 ### Function Configuration
 ```yaml
 Functions:
-  DataValidationFunction:
+  DataValidation:
     Layers:
       - !Ref CoreDataScienceLayer
       - !Ref AWSUtilitiesLayer
     # No ML layer needed for validation
     
-  EnhancedFeatureEngineeringFunction:
+  FeatureEngineering:
     Layers:
       - !Ref CoreDataScienceLayer
       - !Ref MLLibrariesLayer
       - !Ref AWSUtilitiesLayer
     # All layers for feature engineering
     
-  EnhancedPredictionsFunction:
+  Predictions:
     Layers:
       - !Ref CoreDataScienceLayer
       - !Ref MLLibrariesLayer

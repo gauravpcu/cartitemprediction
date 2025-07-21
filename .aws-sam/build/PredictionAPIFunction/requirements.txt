@@ -1,4 +1,0 @@
-# Heavy dependencies now provided by Lambda layers:
-# - boto3, python-dateutil: provided by AWSUtilitiesLayer
-
-# Function-specific dependencies only

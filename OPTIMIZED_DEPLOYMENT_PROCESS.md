@@ -263,7 +263,7 @@ def lambda_handler(event, context):
 python3 scripts/size-validation.py check
 
 # Review CloudWatch logs for optimization opportunities
-sam logs --stack-name cart-prediction --filter ERROR
+sam logs --stack-name item-prediction --filter ERROR
 ```
 
 #### Monthly Tasks

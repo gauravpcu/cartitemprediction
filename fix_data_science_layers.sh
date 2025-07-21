@@ -92,7 +92,7 @@ if [ -d "docker-layers/core-data-science" ] && [ -d "docker-layers/ml-libraries"
     
     echo ""
     echo "✅ Layers fixed! Now redeploy with:"
-    echo "   sam build && sam deploy --stack-name cart-prediction --region us-east-1 --capabilities CAPABILITY_IAM --resolve-s3"
+    echo "   sam build && sam deploy --stack-name item-prediction --region us-east-1 --capabilities CAPABILITY_IAM --resolve-s3"
     
 else
     echo "❌ Failed to build layers with Docker"

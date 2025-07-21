@@ -448,7 +448,7 @@ def check_function_sizes():
     functions = lambda_client.list_functions()
     
     for func in functions['Functions']:
-        if 'cart-prediction' in func['FunctionName']:
+        if 'item-prediction' in func['FunctionName']:
             size_mb = func['CodeSize'] / (1024 * 1024)
             print(f"{func['FunctionName']}: {size_mb:.2f}MB")
             
@@ -486,7 +486,7 @@ LargeFunctionAlarm:
 
 ```bash
 # If deployment completely fails
-sam delete --stack-name cart-prediction --region us-east-1
+sam delete --stack-name item-prediction --region us-east-1
 
 # Clean everything
 rm -rf .aws-sam/
@@ -502,7 +502,7 @@ rm -rf layers/*/python/
 ```bash
 # Rollback to previous layer version
 aws lambda update-function-configuration \
-  --function-name cart-prediction-DataValidationFunction \
+  --function-name item-prediction-DataValidation \
   --layers arn:aws:lambda:us-east-1:123456789:layer:core-data-science-layer:1
 
 # Or update specific layer

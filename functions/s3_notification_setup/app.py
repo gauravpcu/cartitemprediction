@@ -56,7 +56,7 @@ def lambda_handler(event, context):
         raw_bucket = properties['RawDataBucket']
         processed_bucket = properties['ProcessedDataBucket']
         feature_function = properties['FeatureEngineeringFunction']
-        validation_function = properties['DataValidationFunction']
+        validation_function = properties['DataValidation']
         
         if request_type == 'Create' or request_type == 'Update':
             # Set up notification for raw data bucket
