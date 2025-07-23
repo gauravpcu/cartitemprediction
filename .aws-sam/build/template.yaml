@@ -54,7 +54,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName:
-        Fn::Sub: item-prediction-raw-data-${Environment}-${AWS::AccountId}
+        Fn::Sub: item-prediction-raw-data-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -66,7 +66,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName:
-        Fn::Sub: item-prediction-processed-data-${Environment}-${AWS::AccountId}
+        Fn::Sub: item-prediction-processed-data-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -78,14 +78,14 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName:
-        Fn::Sub: item-prediction-model-artifacts-${Environment}-${AWS::AccountId}
+        Fn::Sub: item-prediction-model-artifacts-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
   ResultsBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName:
-        Fn::Sub: item-prediction-results-${Environment}-${AWS::AccountId}
+        Fn::Sub: item-prediction-results-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
   FeedbackTable:
@@ -203,7 +203,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: feature-engineering-${Environment}
+        Fn::Sub: feature-engineering-${Environment}-v2
       CodeUri: FeatureEngineering
       Handler: app.lambda_handler
       Role:
@@ -234,7 +234,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: data-validation-${Environment}
+        Fn::Sub: data-validation-${Environment}-v2
       CodeUri: DataValidation
       Handler: app.lambda_handler
       Role:
@@ -252,7 +252,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: predictions-${Environment}
+        Fn::Sub: predictions-${Environment}-v2
       CodeUri: Predictions
       Handler: app.lambda_handler
       Role:
@@ -282,7 +282,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: prediction-api-${Environment}
+        Fn::Sub: prediction-api-${Environment}-v2
       Description: API function for handling order predictions.
       CodeUri: PredictionAPI
       Handler: app.lambda_handler
@@ -309,7 +309,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: product-prediction-api-${Environment}
+        Fn::Sub: product-prediction-api-${Environment}-v2
       CodeUri: ProductPredictionAPI
       Handler: app.lambda_handler
       Role:
@@ -335,7 +335,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: recommend-api-${Environment}
+        Fn::Sub: recommend-api-${Environment}-v2
       CodeUri: RecommendAPI
       Handler: app.lambda_handler
       Role:
@@ -361,7 +361,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: feedback-api-${Environment}
+        Fn::Sub: feedback-api-${Environment}-v2
       CodeUri: FeedbackAPI
       Handler: app.lambda_handler
       Role:
