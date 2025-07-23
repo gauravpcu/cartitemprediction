@@ -1,0 +1,14 @@
+{
+  "Records": [
+    {
+      "s3": {
+        "bucket": {
+          "name": "item-prediction-raw-data-dev-533267165065-v2"
+        },
+        "object": {
+          "key": "test_data_scionhealth_389.csv"
+        }
+      }
+    }
+  ]
+}

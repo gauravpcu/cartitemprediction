@@ -58,7 +58,7 @@ Resources:
   RawDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub item-prediction-raw-data-${Environment}-${AWS::AccountId}
+      BucketName: !Sub item-prediction-raw-data-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -70,7 +70,7 @@ Resources:
   ProcessedDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub item-prediction-processed-data-${Environment}-${AWS::AccountId}
+      BucketName: !Sub item-prediction-processed-data-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -82,14 +82,14 @@ Resources:
   ModelArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub item-prediction-model-artifacts-${Environment}-${AWS::AccountId}
+      BucketName: !Sub item-prediction-model-artifacts-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
 
   ResultsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub item-prediction-results-${Environment}-${AWS::AccountId}
+      BucketName: !Sub item-prediction-results-${Environment}-${AWS::AccountId}-v2
       VersioningConfiguration:
         Status: Enabled
 
@@ -215,7 +215,7 @@ Resources:
   FeatureEngineering:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "feature-engineering-${Environment}"
+      FunctionName: !Sub "feature-engineering-${Environment}-v2"
       CodeUri: functions/enhanced_feature_engineering/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -237,7 +237,7 @@ Resources:
   DataValidation:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "data-validation-${Environment}"
+      FunctionName: !Sub "data-validation-${Environment}-v2"
       CodeUri: functions/data_validation/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -249,7 +249,7 @@ Resources:
   Predictions:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "predictions-${Environment}"
+      FunctionName: !Sub "predictions-${Environment}-v2"
       CodeUri: functions/enhanced_predictions/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -268,7 +268,7 @@ Resources:
   PredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "prediction-api-${Environment}"
+      FunctionName: !Sub "prediction-api-${Environment}-v2"
       Description: API function for handling order predictions.
       CodeUri: functions/prediction_api/
       Handler: app.lambda_handler
@@ -289,7 +289,7 @@ Resources:
   ProductPredictionAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "product-prediction-api-${Environment}"
+      FunctionName: !Sub "product-prediction-api-${Environment}-v2"
       CodeUri: functions/product_prediction_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -308,7 +308,7 @@ Resources:
   RecommendAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "recommend-api-${Environment}"
+      FunctionName: !Sub "recommend-api-${Environment}-v2"
       CodeUri: functions/recommend_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -327,7 +327,7 @@ Resources:
   FeedbackAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "feedback-api-${Environment}"
+      FunctionName: !Sub "feedback-api-${Environment}-v2"
       CodeUri: functions/feedback_api/
       Handler: app.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
